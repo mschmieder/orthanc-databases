@@ -419,7 +419,7 @@ namespace OrthancDatabases
     
   void IndexBackend::DeleteResource(int64_t id)
   {
-    assert(GetDialect() != Dialect_MySQL);
+    assert(manager_.GetDialect() != Dialect_MySQL);
     
     ClearDeletedFiles();
     ClearDeletedResources();
@@ -692,7 +692,7 @@ namespace OrthancDatabases
   {
     std::auto_ptr<DatabaseManager::CachedStatement> statement;
 
-    switch (GetDialect())
+    switch (manager_.GetDialect())
     {
       case Dialect_MySQL:
         statement.reset(new DatabaseManager::CachedStatement(
@@ -759,7 +759,7 @@ namespace OrthancDatabases
 
     // NB: "COALESCE" is used to replace "NULL" by "0" if the number of rows is empty
 
-    switch (GetDialect())
+    switch (manager_.GetDialect())
     {
       case Dialect_MySQL:
         statement.reset(new DatabaseManager::CachedStatement(
@@ -796,7 +796,7 @@ namespace OrthancDatabases
 
     // NB: "COALESCE" is used to replace "NULL" by "0" if the number of rows is empty
 
-    switch (GetDialect())
+    switch (manager_.GetDialect())
     {
       case Dialect_MySQL:
         statement.reset(new DatabaseManager::CachedStatement(
@@ -1307,7 +1307,7 @@ namespace OrthancDatabases
                                  int32_t metadataType,
                                  const char* value)
   {
-    if (GetDialect() == Dialect_SQLite)
+    if (manager_.GetDialect() == Dialect_SQLite)
     {
       DatabaseManager::CachedStatement statement(
         STATEMENT_FROM_HERE, manager_,
@@ -1465,7 +1465,7 @@ namespace OrthancDatabases
   {
     std::auto_ptr<DatabaseManager::CachedStatement> statement;
 
-    switch (GetDialect())
+    switch (manager_.GetDialect())
     {
       case Dialect_MySQL:
         statement.reset(new DatabaseManager::CachedStatement(
@@ -1501,7 +1501,7 @@ namespace OrthancDatabases
   {
     std::auto_ptr<DatabaseManager::CachedStatement> statement;
 
-    switch (GetDialect())
+    switch (manager_.GetDialect())
     {
       case Dialect_MySQL:
         statement.reset(new DatabaseManager::CachedStatement(

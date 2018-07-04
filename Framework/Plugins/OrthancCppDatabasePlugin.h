@@ -28,34 +28,30 @@
 
 #pragma once
 
+#if HAS_ORTHANC_EXCEPTION != 1
+#  error HAS_ORTHANC_EXCEPTION must be set to 1
+#endif
+
+
 #include <orthanc/OrthancCDatabasePlugin.h>
+#include <Core/OrthancException.h>
 
-#define ORTHANC_PLUGINS_DATABASE_CATCH_COMMON           \
-  catch (::std::runtime_error& e)                       \
-  {                                                     \
-    LogError(backend, e);                               \
-    return OrthancPluginErrorCode_DatabasePlugin;       \
-  }                                                     \
-  catch (::OrthancPlugins::DatabaseException& e)        \
-  {                                                     \
-    return e.GetErrorCode();                            \
-  }                                                     \
-  catch (...)                                           \
-  {                                                     \
-    backend->GetOutput().LogError("Native exception");  \
-    return OrthancPluginErrorCode_DatabasePlugin;       \
-  }
 
-#if HAS_ORTHANC_EXCEPTION == 1
-#  include <Core/OrthancException.h>
-#  define ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC                  \
+#define ORTHANC_PLUGINS_DATABASE_CATCH                            \
   catch (::Orthanc::OrthancException& e)                          \
   {                                                               \
     return static_cast<OrthancPluginErrorCode>(e.GetErrorCode()); \
+  }                                                               \
+  catch (::std::runtime_error& e)                                 \
+  {                                                               \
+    LogError(backend, e);                                         \
+    return OrthancPluginErrorCode_DatabasePlugin;                 \
+  }                                                               \
+  catch (...)                                                     \
+  {                                                               \
+    backend->GetOutput().LogError("Native exception");            \
+    return OrthancPluginErrorCode_DatabasePlugin;                 \
   }
-#else
-#  define ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-#endif
 
 
 #include <stdexcept>
@@ -64,55 +60,10 @@
 
 namespace OrthancPlugins
 {
-//! @cond Doxygen_Suppress
-  // This class mimics "boost::noncopyable"
-  class NonCopyable
-  {
-  private:
-    NonCopyable(const NonCopyable&);
-
-    NonCopyable& operator= (const NonCopyable&);
-
-  protected:
-    NonCopyable()
-    {
-    }
-
-    ~NonCopyable()
-    {
-    }
-  };
-//! @endcond
-
-
   /**
    * @ingroup Callbacks
    **/
-  class DatabaseException
-  {
-  private:
-    OrthancPluginErrorCode  code_;
-
-  public:
-    DatabaseException() : code_(OrthancPluginErrorCode_DatabasePlugin)
-    {
-    }
-
-    DatabaseException(OrthancPluginErrorCode code) : code_(code)
-    {
-    }
-
-    OrthancPluginErrorCode  GetErrorCode() const
-    {
-      return code_;
-    }
-  };
-
-
-  /**
-   * @ingroup Callbacks
-   **/
-  class DatabaseBackendOutput : public NonCopyable
+  class DatabaseBackendOutput : public boost::noncopyable
   {
     friend class DatabaseBackendAdapter;
 
@@ -298,7 +249,7 @@ namespace OrthancPlugins
   /**
    * @ingroup Callbacks
    **/
-  class IDatabaseBackend : public NonCopyable
+  class IDatabaseBackend : public boost::noncopyable
   {
     friend class DatabaseBackendAdapter;
 
@@ -536,8 +487,7 @@ namespace OrthancPlugins
         backend->AddAttachment(id, *attachment);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
                              
@@ -553,8 +503,7 @@ namespace OrthancPlugins
         backend->AttachChild(parent, child);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
           
                    
@@ -568,8 +517,7 @@ namespace OrthancPlugins
         backend->ClearChanges();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
                              
 
@@ -583,8 +531,7 @@ namespace OrthancPlugins
         backend->ClearExportedResources();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -601,8 +548,7 @@ namespace OrthancPlugins
         *id = backend->CreateResource(publicId, resourceType);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
           
          
@@ -618,8 +564,7 @@ namespace OrthancPlugins
         backend->DeleteAttachment(id, contentType);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
    
 
@@ -635,8 +580,7 @@ namespace OrthancPlugins
         backend->DeleteMetadata(id, metadataType);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
    
 
@@ -651,8 +595,7 @@ namespace OrthancPlugins
         backend->DeleteResource(id);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -677,8 +620,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -704,8 +646,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -733,8 +674,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -759,8 +699,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -785,8 +724,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
           
          
@@ -812,8 +750,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -837,8 +774,7 @@ namespace OrthancPlugins
         }
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
           
          
@@ -853,8 +789,7 @@ namespace OrthancPlugins
         backend->GetLastChange();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -869,8 +804,7 @@ namespace OrthancPlugins
         backend->GetLastExportedResource();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
     
                
@@ -886,8 +820,7 @@ namespace OrthancPlugins
         backend->GetMainDicomTags(id);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
           
          
@@ -907,8 +840,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -924,8 +856,7 @@ namespace OrthancPlugins
         *target = backend->GetResourceCount(resourceType);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
                    
 
@@ -941,8 +872,7 @@ namespace OrthancPlugins
         *resourceType = backend->GetResourceType(id);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -957,8 +887,7 @@ namespace OrthancPlugins
         *target = backend->GetTotalCompressedSize();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
           
          
@@ -973,8 +902,7 @@ namespace OrthancPlugins
         *target = backend->GetTotalUncompressedSize();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
                    
 
@@ -990,8 +918,7 @@ namespace OrthancPlugins
         *existing = backend->IsExistingResource(id);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1007,8 +934,7 @@ namespace OrthancPlugins
         *isProtected = backend->IsProtectedPatient(id);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1034,8 +960,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
           
          
@@ -1061,8 +986,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1077,8 +1001,7 @@ namespace OrthancPlugins
         backend->LogChange(*change);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
           
          
@@ -1093,8 +1016,7 @@ namespace OrthancPlugins
         backend->LogExportedResource(*exported);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
           
          
@@ -1111,8 +1033,7 @@ namespace OrthancPlugins
         backend->LookupAttachment(id, contentType);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1135,8 +1056,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1163,8 +1083,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1193,8 +1112,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1217,8 +1135,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1240,8 +1157,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1265,8 +1181,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1287,8 +1202,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1310,8 +1224,7 @@ namespace OrthancPlugins
 
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1327,8 +1240,7 @@ namespace OrthancPlugins
         backend->SetGlobalProperty(property, value);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1344,8 +1256,7 @@ namespace OrthancPlugins
         backend->SetMainDicomTag(id, tag->group, tag->element, tag->value);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1361,8 +1272,7 @@ namespace OrthancPlugins
         backend->SetIdentifierTag(id, tag->group, tag->element, tag->value);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1379,8 +1289,7 @@ namespace OrthancPlugins
         backend->SetMetadata(id, metadata, value);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1396,8 +1305,7 @@ namespace OrthancPlugins
         backend->SetProtectedPatient(id, (isProtected != 0));
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1411,8 +1319,7 @@ namespace OrthancPlugins
         backend->StartTransaction();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1426,8 +1333,7 @@ namespace OrthancPlugins
         backend->RollbackTransaction();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1441,8 +1347,7 @@ namespace OrthancPlugins
         backend->CommitTransaction();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1456,8 +1361,7 @@ namespace OrthancPlugins
         backend->Open();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1471,8 +1375,7 @@ namespace OrthancPlugins
         backend->Close();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1486,8 +1389,7 @@ namespace OrthancPlugins
         *version = backend->GetDatabaseVersion();
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
 
@@ -1502,8 +1404,7 @@ namespace OrthancPlugins
         backend->UpgradeDatabase(targetVersion, storageArea);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
     
@@ -1517,8 +1418,7 @@ namespace OrthancPlugins
         backend->ClearMainDicomTags(internalId);
         return OrthancPluginErrorCode_Success;
       }
-      ORTHANC_PLUGINS_DATABASE_CATCH_ORTHANC
-      ORTHANC_PLUGINS_DATABASE_CATCH_COMMON
+      ORTHANC_PLUGINS_DATABASE_CATCH
     }
 
     
@@ -1608,7 +1508,8 @@ namespace OrthancPlugins
                                 "against an old version of the Orthanc SDK, consider upgrading");
       }
 
-      OrthancPluginDatabaseContext* database = OrthancPluginRegisterDatabaseBackendV2(context, &params, &extensions, &backend);
+      OrthancPluginDatabaseContext* database =
+        OrthancPluginRegisterDatabaseBackendV2(context, &params, &extensions, &backend);
       if (!context)
       {
         throw std::runtime_error("Unable to register the database backend");

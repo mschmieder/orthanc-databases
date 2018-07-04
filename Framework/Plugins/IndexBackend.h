@@ -78,11 +78,6 @@ namespace OrthancDatabases
   public:
     IndexBackend(IDatabaseFactory* factory);
     
-    Dialect GetDialect() const
-    {
-      return manager_.GetDialect();
-    }
-    
     virtual void Open()
     {
       manager_.Open();

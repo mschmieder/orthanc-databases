@@ -200,6 +200,11 @@ namespace OrthancDatabases
     else
     {
       target = malloc(size);
+      if (target == NULL)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotEnoughMemory);
+      }
+      
       reader.Read(reinterpret_cast<char*>(target));
     }
   }

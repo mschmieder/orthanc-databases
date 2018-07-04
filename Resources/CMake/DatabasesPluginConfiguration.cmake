@@ -42,5 +42,6 @@ list(APPEND DATABASES_SOURCES
   ${ORTHANC_CORE_SOURCES}
   ${ORTHANC_DATABASES_ROOT}/Framework/Plugins/GlobalProperties.cpp
   ${ORTHANC_DATABASES_ROOT}/Framework/Plugins/IndexBackend.cpp
+  ${ORTHANC_DATABASES_ROOT}/Framework/Plugins/StorageBackend.cpp
   ${ORTHANC_ROOT}/Plugins/Samples/Common/OrthancPluginCppWrapper.cpp
   )
