@@ -1,0 +1,63 @@
+Database plugins for Orthanc
+============================
+
+
+General Information
+-------------------
+
+This repository contains the source code of various database plugins
+for Orthanc, the lightweight, RESTful DICOM server. These plugins
+enable Orthanc to store its index and its storage area within
+well-known relational databases systems (RDBMS).
+
+
+Content
+-------
+
+* ./Framework/  : code shared by all the plugins
+* ./MySQL/      : index and storage plugins for MySQL
+* ./PostgreSQL/ : index and storage plugins for PostgreSQL
+* ./SQLite/     : index plugin for SQLite (for experimentation)
+
+If you downloaded this project as a versioned release package
+(.tar.gz) focused on one given RDBMS, you will only find the folders
+that are related to this specific RDBMS. The full source code is
+available at:
+https://bitbucket.org/sjodogne/orthanc-databases/
+
+
+Older releases of PostgreSQL
+----------------------------
+
+This repository supersedes the older "orthanc-postgresql" repository
+that was only focused on PostgreSQL.
+
+Releases <= 2.1 of the PostgreSQL plugins can still be found at:
+https://bitbucket.org/sjodogne/orthanc-postgresql/
+
+
+Licensing
+---------
+
+The database plugins for Orthanc are licensed under the AGPL license.
+
+We also kindly ask scientific works and clinical studies that make
+use of Orthanc to cite Orthanc in their associated publications.
+Similarly, we ask open-source and closed-source products that make
+use of Orthanc to warn us about this use. You can cite our work
+using the following BibTeX entry:
+
+@Article{Jodogne2018,
+  author="Jodogne, S{\'e}bastien",
+  title="The {O}rthanc Ecosystem for Medical Imaging",
+  journal="Journal of Digital Imaging",
+  year="2018",
+  month="Jun",
+  day="01",
+  volume="31",
+  number="3",
+  pages="341--352",
+  issn="1618-727X",
+  doi="10.1007/s10278-018-0082-y",
+  url="https://doi.org/10.1007/s10278-018-0082-y"
+}
