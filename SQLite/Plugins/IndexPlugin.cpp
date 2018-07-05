@@ -24,16 +24,14 @@
 #include <Plugins/Samples/Common/OrthancPluginCppWrapper.h>
 #include <Core/Logging.h>
 
-static OrthancPluginContext* context_ = NULL;
 static std::auto_ptr<OrthancDatabases::SQLiteIndex> backend_;
-
 
 
 static bool DisplayPerformanceWarning()
 {
   (void) DisplayPerformanceWarning;   // Disable warning about unused function
-  OrthancPluginLogWarning(context_, "Performance warning in SQLite index: "
-                          "Non-release build, runtime debug assertions are turned on");
+  LOG(WARNING) << "Performance warning in SQLite index: "
+               << "Non-release build, runtime debug assertions are turned on";
   return true;
 }
 
@@ -44,23 +42,22 @@ extern "C"
   {
     Orthanc::Logging::Initialize(context);
 
-    context_ = context;
     assert(DisplayPerformanceWarning());
 
     /* Check the version of the Orthanc core */
-    if (OrthancPluginCheckVersion(context_) == 0)
+    if (OrthancPluginCheckVersion(context) == 0)
     {
       char info[1024];
       sprintf(info, "Your version of Orthanc (%s) must be above %d.%d.%d to run this plugin",
-              context_->orthancVersion,
+              context->orthancVersion,
               ORTHANC_PLUGINS_MINIMAL_MAJOR_NUMBER,
               ORTHANC_PLUGINS_MINIMAL_MINOR_NUMBER,
               ORTHANC_PLUGINS_MINIMAL_REVISION_NUMBER);
-      OrthancPluginLogError(context_, info);
+      OrthancPluginLogError(context, info);
       return -1;
     }
 
-    OrthancPluginSetDescription(context_, "Stores the Orthanc index into a SQLite database.");
+    OrthancPluginSetDescription(context, "Stores the Orthanc index into a SQLite database.");
 
 #if 0
     OrthancPlugins::OrthancConfiguration configuration(context);
@@ -90,11 +87,16 @@ extern "C"
       backend_.reset(new OrthancDatabases::SQLiteIndex("index.db"));  // TODO parameter
 
       /* Register the SQLite index into Orthanc */
-      OrthancPlugins::DatabaseBackendAdapter::Register(context_, *backend_);
+      OrthancPlugins::DatabaseBackendAdapter::Register(context, *backend_);
     }
-    catch (std::runtime_error& e)
+    catch (Orthanc::OrthancException& e)
     {
-      OrthancPluginLogError(context_, e.what());
+      LOG(ERROR) << e.What();
+      return -1;
+    }
+    catch (...)
+    {
+      LOG(ERROR) << "Native exception while initializing the plugin";
       return -1;
     }
 
@@ -104,7 +106,7 @@ extern "C"
 
   ORTHANC_PLUGINS_API void OrthancPluginFinalize()
   {
-    OrthancPluginLogWarning(context_, "SQLite index is finalizing");
+    LOG(WARNING) << "SQLite index is finalizing";
     backend_.reset(NULL);
   }
 

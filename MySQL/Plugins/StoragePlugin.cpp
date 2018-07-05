@@ -19,19 +19,17 @@
  **/
 
 
-#include "MySQLIndex.h"
 #include "../../Framework/MySQL/MySQLDatabase.h"
+#include "../../Framework/Plugins/StorageBackend.h"
 
 #include <Plugins/Samples/Common/OrthancPluginCppWrapper.h>
 #include <Core/Logging.h>
-
-static std::auto_ptr<OrthancDatabases::MySQLIndex> backend_;
 
 
 static bool DisplayPerformanceWarning()
 {
   (void) DisplayPerformanceWarning;   // Disable warning about unused function
-  LOG(WARNING) << "Performance warning in MySQL index: "
+  LOG(WARNING) << "Performance warning in MySQL storage area: "
                << "Non-release build, runtime debug assertions are turned on";
   return true;
 }
@@ -58,13 +56,13 @@ extern "C"
       return -1;
     }
 
-    OrthancPluginSetDescription(context, "Stores the Orthanc index into a MySQL database.");
+    OrthancPluginSetDescription(context, "Stores the Orthanc storage area into a MySQL database.");
 
     OrthancPlugins::OrthancConfiguration configuration(context);
 
     if (!configuration.IsSection("MySQL"))
     {
-      LOG(WARNING) << "No available configuration for the MySQL index plugin";
+      LOG(WARNING) << "No available configuration for the MySQL storage area plugin";
       return 0;
     }
 
@@ -72,23 +70,18 @@ extern "C"
     configuration.GetSection(mysql, "MySQL");
 
     bool enable;
-    if (!mysql.LookupBooleanValue(enable, "EnableIndex") ||
+    if (!mysql.LookupBooleanValue(enable, "EnableStorage") ||
         !enable)
     {
-      LOG(WARNING) << "The MySQL index is currently disabled, set \"EnableIndex\" "
+      LOG(WARNING) << "The MySQL storage area is currently disabled, set \"EnableStorage\" "
                    << "to \"true\" in the \"MySQL\" section of the configuration file of Orthanc";
       return 0;
     }
 
     try
     {
-      OrthancDatabases::MySQLParameters parameters(mysql);
-
-      /* Create the database back-end */
-      backend_.reset(new OrthancDatabases::MySQLIndex(parameters));
-
-      /* Register the MySQL index into Orthanc */
-      OrthancPlugins::DatabaseBackendAdapter::Register(context, *backend_);
+      // TODO
+      //OrthancDatabases::StorageBackend::Register();
     }
     catch (Orthanc::OrthancException& e)
     {
@@ -107,16 +100,16 @@ extern "C"
 
   ORTHANC_PLUGINS_API void OrthancPluginFinalize()
   {
-    LOG(WARNING) << "MySQL index is finalizing";
+    LOG(WARNING) << "MySQL storage area is finalizing";
 
-    backend_.reset(NULL);
+    OrthancDatabases::StorageBackend::Finalize();
     OrthancDatabases::MySQLDatabase::GlobalFinalization();
   }
 
 
   ORTHANC_PLUGINS_API const char* OrthancPluginGetName()
   {
-    return "mysql-index";
+    return "mysql-storage";
   }
 
 

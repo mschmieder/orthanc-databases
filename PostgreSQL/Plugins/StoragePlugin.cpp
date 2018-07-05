@@ -19,19 +19,16 @@
  **/
 
 
-#include "MySQLIndex.h"
-#include "../../Framework/MySQL/MySQLDatabase.h"
+#include "../../Framework/Plugins/StorageBackend.h"
 
 #include <Plugins/Samples/Common/OrthancPluginCppWrapper.h>
 #include <Core/Logging.h>
-
-static std::auto_ptr<OrthancDatabases::MySQLIndex> backend_;
 
 
 static bool DisplayPerformanceWarning()
 {
   (void) DisplayPerformanceWarning;   // Disable warning about unused function
-  LOG(WARNING) << "Performance warning in MySQL index: "
+  LOG(WARNING) << "Performance warning in PostgreSQL storage area: "
                << "Non-release build, runtime debug assertions are turned on";
   return true;
 }
@@ -58,37 +55,32 @@ extern "C"
       return -1;
     }
 
-    OrthancPluginSetDescription(context, "Stores the Orthanc index into a MySQL database.");
+    OrthancPluginSetDescription(context, "Stores the Orthanc storage area into a PostgreSQL database.");
 
     OrthancPlugins::OrthancConfiguration configuration(context);
 
-    if (!configuration.IsSection("MySQL"))
+    if (!configuration.IsSection("PostgreSQL"))
     {
-      LOG(WARNING) << "No available configuration for the MySQL index plugin";
+      LOG(WARNING) << "No available configuration for the PostgreSQL storage area plugin";
       return 0;
     }
 
-    OrthancPlugins::OrthancConfiguration mysql;
-    configuration.GetSection(mysql, "MySQL");
+    OrthancPlugins::OrthancConfiguration postgresql;
+    configuration.GetSection(postgresql, "PostgreSQL");
 
     bool enable;
-    if (!mysql.LookupBooleanValue(enable, "EnableIndex") ||
+    if (!postgresql.LookupBooleanValue(enable, "EnableStorage") ||
         !enable)
     {
-      LOG(WARNING) << "The MySQL index is currently disabled, set \"EnableIndex\" "
-                   << "to \"true\" in the \"MySQL\" section of the configuration file of Orthanc";
+      LOG(WARNING) << "The PostgreSQL storage area is currently disabled, set \"EnableStorage\" "
+                   << "to \"true\" in the \"PostgreSQL\" section of the configuration file of Orthanc";
       return 0;
     }
 
     try
     {
-      OrthancDatabases::MySQLParameters parameters(mysql);
-
-      /* Create the database back-end */
-      backend_.reset(new OrthancDatabases::MySQLIndex(parameters));
-
-      /* Register the MySQL index into Orthanc */
-      OrthancPlugins::DatabaseBackendAdapter::Register(context, *backend_);
+      // TODO
+      //OrthancDatabases::StorageBackend::Register();
     }
     catch (Orthanc::OrthancException& e)
     {
@@ -107,16 +99,14 @@ extern "C"
 
   ORTHANC_PLUGINS_API void OrthancPluginFinalize()
   {
-    LOG(WARNING) << "MySQL index is finalizing";
-
-    backend_.reset(NULL);
-    OrthancDatabases::MySQLDatabase::GlobalFinalization();
+    LOG(WARNING) << "PostgreSQL storage area is finalizing";
+    OrthancDatabases::StorageBackend::Finalize();
   }
 
 
   ORTHANC_PLUGINS_API const char* OrthancPluginGetName()
   {
-    return "mysql-index";
+    return "postgresql-storage";
   }
 
 
