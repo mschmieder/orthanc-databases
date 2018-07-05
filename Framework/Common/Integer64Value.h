@@ -23,6 +23,8 @@
 
 #include "IValue.h"
 
+#include <stdint.h>
+
 namespace OrthancDatabases
 {
   class Integer64Value : public IValue
