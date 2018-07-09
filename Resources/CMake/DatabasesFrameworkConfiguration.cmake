@@ -34,6 +34,7 @@ endif()
 if (ENABLE_MYSQL_BACKEND)
   set(ENABLE_CRYPTO_OPTIONS ON)
   set(ENABLE_SSL ON)
+  set(ENABLE_ZLIB ON)
 
   if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     set(ENABLE_LOCALE ON)           # iconv is needed
