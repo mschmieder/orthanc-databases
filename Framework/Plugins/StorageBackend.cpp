@@ -71,10 +71,43 @@ namespace OrthancDatabases
     }
   }
 
-
+  
   StorageBackend::StorageBackend(IDatabaseFactory* factory) :
     manager_(factory)
   {
+  }
+
+
+  void StorageBackend::ReadToString(std::string& content,
+                                    DatabaseManager::Transaction& transaction, 
+                                    const std::string& uuid,
+                                    OrthancPluginContentType type)
+  {
+    void* buffer = NULL; 
+    size_t size;
+    Read(buffer, size, transaction, uuid, type);
+
+    try
+    {
+      content.resize(size);
+    }
+    catch (std::bad_alloc&)
+    {
+      if (size != 0)
+      {
+        free(buffer);
+      }
+
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_NotEnoughMemory);
+    }
+
+    if (size != 0)
+    {
+      assert(buffer != NULL);
+      memcpy(&content[0], buffer, size);
+    }
+
+    free(buffer);
   }
 
 

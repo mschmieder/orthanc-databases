@@ -29,6 +29,16 @@ OrthancDatabases::PostgreSQLParameters  globalParameters_;
 #include "../../Framework/Plugins/IndexUnitTests.h"
 
 
+#if ORTHANC_POSTGRESQL_STATIC == 1
+#  include <c.h>  // PostgreSQL includes
+
+TEST(PostgreSQL, Version)
+{
+  ASSERT_STREQ("9.6.1", PG_VERSION);
+}
+#endif
+
+
 TEST(PostgreSQLParameters, Basic)
 {
   OrthancDatabases::PostgreSQLParameters p;
@@ -94,51 +104,6 @@ TEST(PostgreSQLIndex, Lock)
   OrthancDatabases::PostgreSQLIndex db4(lock);
   db4.Open();
 }
-
-
-#if 0
-TEST(PostgreSQL, StorageArea)
-{
-  std::auto_ptr<PostgreSQLDatabase> pg(CreateTestDatabase(true));
-  PostgreSQLStorageArea s(pg.release(), true, true);
-
-  ASSERT_EQ(0, CountLargeObjects(s.GetDatabase()));
-  
-  for (int i = 0; i < 10; i++)
-  {
-    std::string uuid = boost::lexical_cast<std::string>(i);
-    std::string value = "Value " + boost::lexical_cast<std::string>(i * 2);
-    s.Create(uuid, value.c_str(), value.size(), OrthancPluginContentType_Unknown);
-  }
-
-  std::string tmp;
-  ASSERT_THROW(s.Read(tmp, "nope", OrthancPluginContentType_Unknown), Orthanc::OrthancException);
-  
-  ASSERT_EQ(10, CountLargeObjects(s.GetDatabase()));
-  s.Remove("5", OrthancPluginContentType_Unknown);
-  ASSERT_EQ(9, CountLargeObjects(s.GetDatabase()));
-
-  for (int i = 0; i < 10; i++)
-  {
-    std::string uuid = boost::lexical_cast<std::string>(i);
-    std::string expected = "Value " + boost::lexical_cast<std::string>(i * 2);
-    std::string content;
-
-    if (i == 5)
-    {
-      ASSERT_THROW(s.Read(content, uuid, OrthancPluginContentType_Unknown), Orthanc::OrthancException);
-    }
-    else
-    {
-      s.Read(content, uuid, OrthancPluginContentType_Unknown);
-      ASSERT_EQ(expected, content);
-    }
-  }
-
-  s.Clear();
-  ASSERT_EQ(0, CountLargeObjects(s.GetDatabase()));
-}
-#endif
 
 
 int main(int argc, char **argv)
