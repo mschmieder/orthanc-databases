@@ -80,23 +80,66 @@ namespace OrthancDatabases
     
     void RollbackTransaction();
 
+
+    class Transaction : public boost::noncopyable
+    {
+    private:
+      boost::recursive_mutex::scoped_lock  lock_;
+      DatabaseManager&                     manager_;
+      IDatabase&                           database_;
+
+    public:
+      Transaction(DatabaseManager& manager) :
+      lock_(manager.mutex_),
+      manager_(manager),
+      database_(manager.GetDatabase())
+      {
+      }
+
+      void Commit()
+      {
+        manager_.CommitTransaction();
+      }
+    
+      void Rollback()
+      {
+        manager_.RollbackTransaction();
+      }
+
+      DatabaseManager& GetManager()
+      {
+        return manager_;
+      }
+
+      IDatabase& GetDatabase()
+      {
+        return database_;
+      }
+    };
+
+
     class CachedStatement : public boost::noncopyable
     {
     private:
       boost::recursive_mutex::scoped_lock  lock_;
       DatabaseManager&                     manager_;
       StatementLocation                    location_;
-      IDatabase&                           database_;
       ITransaction&                        transaction_;
       IPrecompiledStatement*               statement_;
       std::auto_ptr<Query>                 query_;
       std::auto_ptr<IResult>               result_;
+
+      void Setup(const char* sql);
 
       IResult& GetResult() const;
 
     public:
       CachedStatement(const StatementLocation& location,
                       DatabaseManager& manager,
+                      const char* sql);
+
+      CachedStatement(const StatementLocation& location,
+                      Transaction& transaction,
                       const char* sql);
 
       void SetReadOnly(bool readOnly);
@@ -108,11 +151,6 @@ namespace OrthancDatabases
 
       void Execute(const Dictionary& parameters);
 
-      IDatabase& GetDatabase()
-      {
-        return database_;
-      }
-      
       bool IsDone() const;
       
       void Next();

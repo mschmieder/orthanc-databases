@@ -33,31 +33,39 @@ namespace OrthancDatabases
     DatabaseManager   manager_;
 
   protected:
-    DatabaseManager& GetManager()
-    {
-      return manager_;
-    }
-    
+    void ReadFromString(void*& buffer,
+                        size_t& size,
+                        const std::string& content);
+
   public:
     StorageBackend(IDatabaseFactory* factory);
 
     virtual ~StorageBackend()
     {
     }
+
+    DatabaseManager& GetManager() 
+    {
+      return manager_;
+    }
     
-    // WARNING: These methods can possibly be invoked simultaneously
-    // (no mutual exclusion in the storage area plugins)
-    virtual void Create(const std::string& uuid,
+    // NB: These methods will always be invoked in mutual exclusion,
+    // as having access to some "DatabaseManager::Transaction" implies
+    // that the parent "DatabaseManager" is locked
+    virtual void Create(DatabaseManager::Transaction& transaction,
+                        const std::string& uuid,
                         const void* content,
                         size_t size,
                         OrthancPluginContentType type) = 0;
 
     virtual void Read(void*& content,
                       size_t& size,
+                      DatabaseManager::Transaction& transaction, 
                       const std::string& uuid,
                       OrthancPluginContentType type) = 0;
 
-    virtual void Remove(const std::string& uuid,
+    virtual void Remove(DatabaseManager::Transaction& transaction,
+                        const std::string& uuid,
                         OrthancPluginContentType type) = 0;
 
     static void Register(OrthancPluginContext* context,

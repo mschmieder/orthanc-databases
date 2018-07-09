@@ -286,16 +286,9 @@ namespace OrthancDatabases
   }
 
 
-  DatabaseManager::CachedStatement::CachedStatement(const StatementLocation& location,
-                                                    DatabaseManager& manager,
-                                                    const char* sql) :
-    lock_(manager.mutex_),
-    manager_(manager),
-    location_(location),
-    database_(manager.GetDatabase()),
-    transaction_(manager.GetTransaction())
+  void DatabaseManager::CachedStatement::Setup(const char* sql)
   {
-    statement_ = manager_.LookupCachedStatement(location);
+    statement_ = manager_.LookupCachedStatement(location_);
 
     if (statement_ == NULL)
     {
@@ -304,8 +297,32 @@ namespace OrthancDatabases
     else
     {
       LOG(TRACE) << "Reusing cached statement from "
-                 << location.GetFile() << ":" << location.GetLine();
+                 << location_.GetFile() << ":" << location_.GetLine();
     }
+  }
+
+
+  DatabaseManager::CachedStatement::CachedStatement(const StatementLocation& location,
+                                                    DatabaseManager& manager,
+                                                    const char* sql) :
+    lock_(manager.mutex_),
+    manager_(manager),
+    location_(location),
+    transaction_(manager.GetTransaction())
+  {
+    Setup(sql);
+  }
+
+      
+  DatabaseManager::CachedStatement::CachedStatement(const StatementLocation& location,
+                                                    Transaction& transaction,
+                                                    const char* sql) :
+    lock_(manager_.mutex_),
+    manager_(transaction.GetManager()),
+    location_(location),
+    transaction_(manager_.GetTransaction())
+  {
+    Setup(sql);
   }
 
       

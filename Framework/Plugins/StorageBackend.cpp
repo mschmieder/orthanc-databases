@@ -48,16 +48,40 @@
 
 namespace OrthancDatabases
 {
+  void StorageBackend::ReadFromString(void*& buffer,
+                                      size_t& size,
+                                      const std::string& content)
+  {
+    size = content.size();
+
+    if (content.empty())
+    {
+      buffer = NULL;
+    }
+    else
+    {
+      buffer = malloc(size);
+
+      if (buffer == NULL)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_NotEnoughMemory);
+      }
+
+      memcpy(buffer, content.c_str(), size);
+    }
+  }
+
+
   StorageBackend::StorageBackend(IDatabaseFactory* factory) :
     manager_(factory)
   {
   }
 
 
-
   static OrthancPluginContext* context_ = NULL;
   static std::auto_ptr<StorageBackend>  backend_;
     
+
   static OrthancPluginErrorCode StorageCreate(const char* uuid,
                                               const void* content,
                                               int64_t size,
@@ -65,7 +89,9 @@ namespace OrthancDatabases
   {
     try
     {
-      backend_->Create(uuid, content, static_cast<size_t>(size), type);
+      DatabaseManager::Transaction transaction(backend_->GetManager());
+      backend_->Create(transaction, uuid, content, static_cast<size_t>(size), type);
+      transaction.Commit();
       return OrthancPluginErrorCode_Success;
     }
     ORTHANC_PLUGINS_DATABASE_CATCH;
@@ -79,9 +105,11 @@ namespace OrthancDatabases
   {
     try
     {
+      DatabaseManager::Transaction transaction(backend_->GetManager());
       size_t tmp;
-      backend_->Read(*content, tmp, uuid, type);
+      backend_->Read(*content, tmp, transaction, uuid, type);
       *size = static_cast<int64_t>(tmp);
+      transaction.Commit();
       return OrthancPluginErrorCode_Success;
     }
     ORTHANC_PLUGINS_DATABASE_CATCH;
@@ -93,7 +121,9 @@ namespace OrthancDatabases
   {
     try
     {
-      backend_->Remove(uuid, type);
+      DatabaseManager::Transaction transaction(backend_->GetManager());
+      backend_->Remove(transaction, uuid, type);
+      transaction.Commit();
       return OrthancPluginErrorCode_Success;
     }
     ORTHANC_PLUGINS_DATABASE_CATCH;
