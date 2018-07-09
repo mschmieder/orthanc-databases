@@ -306,6 +306,8 @@ if (STATIC_BUILD OR NOT USE_SYSTEM_LIBPQ)
       )      
 
   elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    link_libraries(secur32)
+    
     include_directories(
       ${LIBPQ_SOURCES_DIR}/src/include/port/win32
       ${LIBPQ_SOURCES_DIR}/src/port

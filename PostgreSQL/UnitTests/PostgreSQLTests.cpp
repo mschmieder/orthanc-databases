@@ -44,7 +44,7 @@
 
 using namespace OrthancDatabases;
 
-extern const OrthancDatabases::PostgreSQLParameters  globalParameters_;
+extern OrthancDatabases::PostgreSQLParameters  globalParameters_;
 
 
 static OrthancDatabases::PostgreSQLDatabase* CreateTestDatabase(bool clearAll)

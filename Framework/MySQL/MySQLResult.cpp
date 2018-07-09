@@ -24,7 +24,7 @@
 #include <Core/Logging.h>
 #include <Core/OrthancException.h>
 
-#include <mysql/errmsg.h>
+#include <errmsg.h>
 #include <mysqld_error.h>
 
 namespace OrthancDatabases
