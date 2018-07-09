@@ -176,9 +176,13 @@ namespace OrthancDatabases
     {
       target = std::string("sslmode=disable") +  // TODO WHY SSL DOES NOT WORK? ("SSL error: wrong version number")
         " user=" + username_ + 
-        " password=" + password_ + 
         " host=" + host_ + 
         " port=" + boost::lexical_cast<std::string>(port_);
+
+      if (!password_.empty())
+      {
+        target += " password=" + password_;
+      }
 
       if (database_.size() > 0)
       {
