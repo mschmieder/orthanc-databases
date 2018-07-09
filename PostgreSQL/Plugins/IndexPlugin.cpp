@@ -106,7 +106,7 @@ extern "C"
 
   ORTHANC_PLUGINS_API void OrthancPluginFinalize()
   {
-    LOG(WARNING) << "PostgreSQL index area is finalizing";
+    LOG(WARNING) << "PostgreSQL index is finalizing";
     backend_.reset(NULL);
   }
 
