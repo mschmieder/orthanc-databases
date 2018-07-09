@@ -24,6 +24,7 @@
 #include "IValue.h"
 
 #include <map>
+#include <stdint.h>
 
 namespace OrthancDatabases
 {

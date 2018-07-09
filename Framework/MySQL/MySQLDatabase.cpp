@@ -30,7 +30,7 @@
 #include <Core/OrthancException.h>
 #include <Core/Toolbox.h>
 
-#include <mysql/errmsg.h>
+#include <errmsg.h>
 #include <mysqld_error.h>
 
 #include <memory>
