@@ -117,16 +117,22 @@ namespace OrthancDatabases
       if (!LookupGlobalIntegerProperty(hasTrigram, *db, t, Orthanc::GlobalProperty_HasTrigramIndex) ||
           hasTrigram != 1)
       {
-        // Apply fix for performance issue (speed up wildcard search by using GIN trigrams)
-        // https://www.postgresql.org/docs/current/static/pgtrgm.html
+        /**
+         * Apply fix for performance issue (speed up wildcard search
+         * by using GIN trigrams). This implements the patch suggested
+         * in issue #47, BUT we also keep the original
+         * "DicomIdentifiersIndexValues", as it leads to better
+         * performance for "strict" searches (i.e. searches involving
+         * no wildcard).
+         * https://www.postgresql.org/docs/current/static/pgtrgm.html
+         * https://bitbucket.org/sjodogne/orthanc/issues/47/index-improvements-for-pg-plugin
+         **/
         try
         {
           LOG(INFO) << "Trying to enable trigram matching on the PostgreSQL database to speed up wildcard searches";
           db->Execute(
             "CREATE EXTENSION pg_trgm; "
-            "CREATE INDEX DicomIdentifiersIndexValues_new ON DicomIdentifiers USING gin(value gin_trgm_ops); "
-            "DROP INDEX DicomIdentifiersIndexValues; "
-            "ALTER INDEX DicomIdentifiersIndexValues_new RENAME TO DicomIdentifiersIndexValues;");
+            "CREATE INDEX DicomIdentifiersIndexValues2 ON DicomIdentifiers USING gin(value gin_trgm_ops);");
 
           SetGlobalIntegerProperty(*db, t, Orthanc::GlobalProperty_HasTrigramIndex, 1);
         }
