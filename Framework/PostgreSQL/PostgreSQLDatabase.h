@@ -57,6 +57,8 @@ namespace OrthancDatabases
 
     void Open();
 
+    void AdvisoryLock(int32_t lock);
+
     void Execute(const std::string& sql);
 
     bool DoesTableExist(const char* name);

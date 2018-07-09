@@ -66,6 +66,11 @@ namespace OrthancDatabases
 
     db->Open();
 
+    if (parameters_.HasLock())
+    {
+      db->AdvisoryLock(42 /* some arbitrary constant */);
+    }
+
     if (clearAll_)
     {
       db->ClearAll();
@@ -87,12 +92,6 @@ namespace OrthancDatabases
         SetGlobalIntegerProperty(*db, t, Orthanc::GlobalProperty_HasTrigramIndex, 0);
       }
           
-      t.Commit();
-    }
-
-    {
-      PostgreSQLTransaction t(*db);
-
       if (!db->DoesTableExist("Resources"))
       {
         LOG(ERROR) << "Corrupted PostgreSQL database";

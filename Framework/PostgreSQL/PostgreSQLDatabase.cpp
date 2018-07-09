@@ -96,26 +96,25 @@ namespace OrthancDatabases
       LOG(ERROR) << "PostgreSQL error: " << message;
       throw Orthanc::OrthancException(Orthanc::ErrorCode_DatabaseUnavailable);
     }
+  }
 
-    if (parameters_.HasLock())
+
+  void PostgreSQLDatabase::AdvisoryLock(int32_t lock)
+  {
+    PostgreSQLTransaction transaction(*this);
+
+    PostgreSQLStatement s(*this, "select pg_try_advisory_lock(" + 
+                          boost::lexical_cast<std::string>(lock) + ");");
+
+    PostgreSQLResult result(s);
+    if (result.IsDone() ||
+        !result.GetBoolean(0))
     {
-      PostgreSQLTransaction transaction(*this);
-
-      int32_t lock = 42;  // Some arbitrary constant
-
-      PostgreSQLStatement s(*this, "select pg_try_advisory_lock(" + 
-                            boost::lexical_cast<std::string>(lock) + ");");
-
-      PostgreSQLResult result(s);
-      if (result.IsDone() ||
-          !result.GetBoolean(0))
-      {
-        LOG(ERROR) << "The PostgreSQL database is locked by another instance of Orthanc";
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);
-      }
-
-      transaction.Commit();
+      LOG(ERROR) << "The PostgreSQL database is locked by another instance of Orthanc";
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);
     }
+
+    transaction.Commit();
   }
 
 
