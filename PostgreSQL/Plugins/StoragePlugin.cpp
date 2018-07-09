@@ -145,6 +145,33 @@ namespace OrthancDatabases
                       const std::string& uuid,
                       OrthancPluginContentType type) 
     {
+      DatabaseManager::CachedStatement statement(
+        STATEMENT_FROM_HERE, GetManager(),
+        "SELECT content FROM StorageArea WHERE uuid=$1 AND type=$2");
+     
+      statement.SetParameterType("uuid", ValueType_Utf8String);
+      statement.SetParameterType("type", ValueType_Integer64);
+
+      Dictionary args;
+      args.SetUtf8Value("uuid", uuid);
+      args.SetIntegerValue("type", type);
+     
+      statement.Execute(args);
+
+      if (statement.IsDone())
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+      }
+      else if (statement.GetResultFieldsCount() != 1 ||
+               statement.GetResultField(0).GetType() != ValueType_File)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);        
+      }
+      else
+      {
+        const FileValue& value = dynamic_cast<const FileValue&>(statement.GetResultField(0));
+        ReadFromString(content, size, value.GetContent());
+      }
     }
 
 

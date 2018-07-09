@@ -22,6 +22,7 @@
 #include "Dictionary.h"
 
 #include "BinaryStringValue.h"
+#include "FileValue.h"
 #include "Integer64Value.h"
 #include "NullValue.h"
 #include "Utf8StringValue.h"
@@ -97,6 +98,21 @@ namespace OrthancDatabases
                                   const std::string& binary)
   {
     SetValue(key, new BinaryStringValue(binary));
+  }
+
+  
+  void Dictionary::SetFileValue(const std::string& key,
+                                const std::string& file)
+  {
+    SetValue(key, new FileValue(file));
+  }
+
+  
+  void Dictionary::SetFileValue(const std::string& key,
+                                const void* content,
+                                size_t size)
+  {
+    SetValue(key, new FileValue(content, size));
   }
 
   

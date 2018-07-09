@@ -34,6 +34,7 @@
 #  undef S_IXOTH
 #endif
 
+#include "../Plugins/PostgreSQLStorageArea.h"
 #include "../../Framework/PostgreSQL/PostgreSQLTransaction.h"
 #include "../../Framework/PostgreSQL/PostgreSQLResult.h"
 #include "../../Framework/PostgreSQL/PostgreSQLLargeObject.h"
@@ -66,7 +67,6 @@ static OrthancDatabases::PostgreSQLDatabase* CreateTestDatabase(bool clearAll)
 static int64_t CountLargeObjects(PostgreSQLDatabase& db)
 {
   // Count the number of large objects in the DB
-  PostgreSQLTransaction t(db);
   PostgreSQLStatement s(db, "SELECT COUNT(*) FROM pg_catalog.pg_largeobject", true);
   PostgreSQLResult r(s);
   return r.GetInteger64(0);
@@ -338,12 +338,60 @@ TEST(PostgreSQL, LargeObject)
 }
 
 
-
-#if ORTHANC_POSTGRESQL_STATIC == 1
-#  include <c.h>  // PostgreSQL includes
-
-TEST(PostgreSQL, Version)
+TEST(PostgreSQL, StorageArea)
 {
-  ASSERT_STREQ("9.6.1", PG_VERSION);
+  OrthancDatabases::PostgreSQLStorageArea storageArea(globalParameters_);
+  storageArea.SetClearAll(true);
+
+  {
+    OrthancDatabases::DatabaseManager::Transaction transaction(storageArea.GetManager());
+    OrthancDatabases::PostgreSQLDatabase& db = 
+      dynamic_cast<OrthancDatabases::PostgreSQLDatabase&>(transaction.GetDatabase());
+
+    ASSERT_EQ(0, CountLargeObjects(db));
+  
+    for (int i = 0; i < 10; i++)
+    {
+      std::string uuid = boost::lexical_cast<std::string>(i);
+      std::string value = "Value " + boost::lexical_cast<std::string>(i * 2);
+      storageArea.Create(transaction, uuid, value.c_str(), value.size(), OrthancPluginContentType_Unknown);
+    }
+
+    std::string tmp;
+    ASSERT_THROW(storageArea.ReadToString(tmp, transaction, "nope", OrthancPluginContentType_Unknown), 
+                 Orthanc::OrthancException);
+  
+    ASSERT_EQ(10, CountLargeObjects(db));
+    storageArea.Remove(transaction, "5", OrthancPluginContentType_Unknown);
+
+    ASSERT_EQ(9, CountLargeObjects(db));
+
+    for (int i = 0; i < 10; i++)
+    {
+      std::string uuid = boost::lexical_cast<std::string>(i);
+      std::string expected = "Value " + boost::lexical_cast<std::string>(i * 2);
+      std::string content;
+
+      if (i == 5)
+      {
+        ASSERT_THROW(storageArea.ReadToString(content, transaction, uuid, OrthancPluginContentType_Unknown), 
+                     Orthanc::OrthancException);
+      }
+      else
+      {
+        storageArea.ReadToString(content, transaction, uuid, OrthancPluginContentType_Unknown);
+        ASSERT_EQ(expected, content);
+      }
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+      storageArea.Remove(transaction, boost::lexical_cast<std::string>(i),
+                         OrthancPluginContentType_Unknown);
+    }
+
+    ASSERT_EQ(0, CountLargeObjects(db));
+
+    transaction.Commit();
+  }
 }
-#endif

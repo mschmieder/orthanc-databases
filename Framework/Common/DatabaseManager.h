@@ -53,7 +53,7 @@ namespace OrthancDatabases
                                           const Query& query);
 
     ITransaction& GetTransaction();
-    
+
   public:
     DatabaseManager(IDatabaseFactory* factory);  // Takes ownership
     
