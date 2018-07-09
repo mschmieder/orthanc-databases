@@ -191,6 +191,8 @@ namespace OrthancDatabases
     {
       memset(&bind, 0, sizeof(bind));
 
+      isNull_ = false;
+      isError_ = false;
       length_ = 0;
 
       bind.buffer_length = buffer_.size();
@@ -203,7 +205,6 @@ namespace OrthancDatabases
         // Only fetches the actual size of the field (*):
         // mysql_stmt_fetch_column() must be invoked afterward
         bind.buffer = 0;
-        isError_ = false;
       }
       else
       {
