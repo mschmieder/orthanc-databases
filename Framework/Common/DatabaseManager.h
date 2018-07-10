@@ -123,6 +123,7 @@ namespace OrthancDatabases
     private:
       boost::recursive_mutex::scoped_lock  lock_;
       DatabaseManager&                     manager_;
+      IDatabase&                           database_;
       StatementLocation                    location_;
       ITransaction&                        transaction_;
       IPrecompiledStatement*               statement_;
@@ -141,6 +142,11 @@ namespace OrthancDatabases
       CachedStatement(const StatementLocation& location,
                       Transaction& transaction,
                       const char* sql);
+
+      IDatabase& GetDatabase()
+      {
+        return database_;
+      }
 
       void SetReadOnly(bool readOnly);
 
