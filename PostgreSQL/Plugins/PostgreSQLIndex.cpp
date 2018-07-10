@@ -130,7 +130,7 @@ namespace OrthancDatabases
         try
         {
           // We've observed 9 minutes on DB with 100000 studies
-          LOG(INFO) << "Trying to enable trigram matching on the PostgreSQL database "
+          LOG(WARNING) << "Trying to enable trigram matching on the PostgreSQL database "
                     << "to speed up wildcard searches. This may take several minutes";
 
           db->Execute(
@@ -138,6 +138,7 @@ namespace OrthancDatabases
             "CREATE INDEX DicomIdentifiersIndexValues2 ON DicomIdentifiers USING gin(value gin_trgm_ops);");
 
           SetGlobalIntegerProperty(*db, t, Orthanc::GlobalProperty_HasTrigramIndex, 1);
+          LOG(WARNING) << "Trigram index has been created";
         }
         catch (Orthanc::OrthancException&)
         {
