@@ -1,6 +1,13 @@
 Pending changes in the mainline
 ===============================
 
+Important remark when upgrading from an older version of the Plugin:
+* The plugin will create a new index to improve search performances.
+  This can take several minutes at Orthanc startup.  Orthanc will not
+  be available during this period.
+  On a 100000 studies DB, we've observed that the creation of this index 
+  took around 10 minutes.
+
 * Migration into the "orthanc-databases" repository
 * Full refactoring to share code with MySQL
 * Fix issue 41 (Additional range IdentifierConstraintType in Orthanc)
