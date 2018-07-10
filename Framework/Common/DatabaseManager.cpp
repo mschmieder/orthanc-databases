@@ -307,8 +307,9 @@ namespace OrthancDatabases
                                                     const char* sql) :
     lock_(manager.mutex_),
     manager_(manager),
+    database_(manager_.GetDatabase()),
     location_(location),
-    transaction_(manager.GetTransaction())
+    transaction_(manager_.GetTransaction())
   {
     Setup(sql);
   }
@@ -319,6 +320,7 @@ namespace OrthancDatabases
                                                     const char* sql) :
     lock_(manager_.mutex_),
     manager_(transaction.GetManager()),
+    database_(manager_.GetDatabase()),
     location_(location),
     transaction_(manager_.GetTransaction())
   {
