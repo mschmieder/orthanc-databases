@@ -129,7 +129,7 @@ namespace OrthancDatabases
          **/
         try
         {
-          LOG(INFO) << "Trying to enable trigram matching on the PostgreSQL database to speed up wildcard searches";
+          LOG(INFO) << "Trying to enable trigram matching on the PostgreSQL database to speed up wildcard searches.  This may take several minutes";  // we've observed 9 minutes on DB with 100000 studies
           db->Execute(
             "CREATE EXTENSION pg_trgm; "
             "CREATE INDEX DicomIdentifiersIndexValues2 ON DicomIdentifiers USING gin(value gin_trgm_ops);");
