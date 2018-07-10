@@ -2,7 +2,7 @@ Database plugins for Orthanc
 ============================
 
 
-General Information
+General information
 -------------------
 
 This repository contains the source code of various database plugins
@@ -15,7 +15,7 @@ Content
 -------
 
 * ./Framework/  : code shared by all the plugins
-* ./MySQL/      : index and storage plugins for MySQL
+* ./MySQL/      : index and storage plugins for MySQL and MariaDB
 * ./PostgreSQL/ : index and storage plugins for PostgreSQL
 * ./SQLite/     : index plugin for SQLite (for experimentation)
 
@@ -26,13 +26,24 @@ available at:
 https://bitbucket.org/sjodogne/orthanc-databases/
 
 
+Compilation and usage
+---------------------
+
+The compilation and usage of the plugins is available in the Orthanc
+Book:
+
+* MySQL/MariaDB : http://book.orthanc-server.com/plugins/mysql.html
+* PostgreSQL    : http://book.orthanc-server.com/plugins/postgresql.html
+
+
 Older releases of PostgreSQL
 ----------------------------
 
 This repository supersedes the older "orthanc-postgresql" repository
 that was only focused on PostgreSQL.
 
-Releases <= 2.1 of the PostgreSQL plugins can still be found at:
+Releases <= 2.1 of the PostgreSQL plugins can still be found in the
+following legacy repository:
 https://bitbucket.org/sjodogne/orthanc-postgresql/
 
 
