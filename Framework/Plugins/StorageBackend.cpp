@@ -25,6 +25,9 @@
 #  error HAS_ORTHANC_EXCEPTION must be set to 1
 #endif
 
+#include "../../Framework/Common/BinaryStringValue.h"
+#include "../../Framework/Common/FileValue.h"
+
 #include <Core/OrthancException.h>
 
 
@@ -111,6 +114,99 @@ namespace OrthancDatabases
   }
 
 
+  void StorageBackend::Create(DatabaseManager::Transaction& transaction,
+                              const std::string& uuid,
+                              const void* content,
+                              size_t size,
+                              OrthancPluginContentType type)
+  {
+    DatabaseManager::CachedStatement statement(
+      STATEMENT_FROM_HERE, GetManager(),
+      "INSERT INTO StorageArea VALUES (${uuid}, ${content}, ${type})");
+     
+    statement.SetParameterType("uuid", ValueType_Utf8String);
+    statement.SetParameterType("content", ValueType_File);
+    statement.SetParameterType("type", ValueType_Integer64);
+
+    Dictionary args;
+    args.SetUtf8Value("uuid", uuid);
+    args.SetFileValue("content", content, size);
+    args.SetIntegerValue("type", type);
+     
+    statement.Execute(args);
+  }
+
+
+  void StorageBackend::Read(void*& content,
+                            size_t& size,
+                            DatabaseManager::Transaction& transaction, 
+                            const std::string& uuid,
+                            OrthancPluginContentType type) 
+  {
+    DatabaseManager::CachedStatement statement(
+      STATEMENT_FROM_HERE, GetManager(),
+      "SELECT content FROM StorageArea WHERE uuid=${uuid} AND type=${type}");
+     
+    statement.SetParameterType("uuid", ValueType_Utf8String);
+    statement.SetParameterType("type", ValueType_Integer64);
+
+    Dictionary args;
+    args.SetUtf8Value("uuid", uuid);
+    args.SetIntegerValue("type", type);
+     
+    statement.Execute(args);
+
+    if (statement.IsDone())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+    }
+    else if (statement.GetResultFieldsCount() != 1)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);        
+    }
+    else
+    {
+      const IValue& value = statement.GetResultField(0);
+      
+      switch (value.GetType())
+      {
+        case ValueType_File:
+          ReadFromString(content, size,
+                         dynamic_cast<const FileValue&>(value).GetContent());
+          break;
+
+        case ValueType_BinaryString:
+          ReadFromString(content, size,
+                         dynamic_cast<const BinaryStringValue&>(value).GetContent());
+          break;
+
+        default:
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);        
+      }
+    }
+  }
+
+
+  void StorageBackend::Remove(DatabaseManager::Transaction& transaction,
+                              const std::string& uuid,
+                              OrthancPluginContentType type)
+  {
+    DatabaseManager::CachedStatement statement(
+      STATEMENT_FROM_HERE, GetManager(),
+      "DELETE FROM StorageArea WHERE uuid=${uuid} AND type=${type}");
+     
+    statement.SetParameterType("uuid", ValueType_Utf8String);
+    statement.SetParameterType("type", ValueType_Integer64);
+
+    Dictionary args;
+    args.SetUtf8Value("uuid", uuid);
+    args.SetIntegerValue("type", type);
+     
+    statement.Execute(args);
+  }
+
+
+
   static OrthancPluginContext* context_ = NULL;
   static std::auto_ptr<StorageBackend>  backend_;
     
@@ -182,6 +278,7 @@ namespace OrthancDatabases
     {
       context_ = context;
       backend_.reset(backend);
+      backend_->GetManager().Open();
 
       OrthancPluginRegisterStorageArea(context_, StorageCreate, StorageRead, StorageRemove);
     }

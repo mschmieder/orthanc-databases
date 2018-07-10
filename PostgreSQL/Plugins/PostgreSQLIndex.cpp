@@ -129,7 +129,10 @@ namespace OrthancDatabases
          **/
         try
         {
-          LOG(INFO) << "Trying to enable trigram matching on the PostgreSQL database to speed up wildcard searches.  This may take several minutes";  // we've observed 9 minutes on DB with 100000 studies
+          // We've observed 9 minutes on DB with 100000 studies
+          LOG(INFO) << "Trying to enable trigram matching on the PostgreSQL database "
+                    << "to speed up wildcard searches. This may take several minutes";
+
           db->Execute(
             "CREATE EXTENSION pg_trgm; "
             "CREATE INDEX DicomIdentifiersIndexValues2 ON DicomIdentifiers USING gin(value gin_trgm_ops);");
@@ -138,8 +141,10 @@ namespace OrthancDatabases
         }
         catch (Orthanc::OrthancException&)
         {
-          LOG(WARNING) << "Performance warning: Your PostgreSQL server does not support trigram matching";
-          LOG(WARNING) << "-> Consider installing the \"pg_trgm\" extension on the PostgreSQL server, e.g. on Debian: sudo apt install postgresql-contrib";
+          LOG(WARNING) << "Performance warning: Your PostgreSQL server does "
+                       << "not support trigram matching";
+          LOG(WARNING) << "-> Consider installing the \"pg_trgm\" extension on the "
+                       << "PostgreSQL server, e.g. on Debian: sudo apt install postgresql-contrib";
         }
       }
 

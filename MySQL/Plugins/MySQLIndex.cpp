@@ -82,38 +82,39 @@ namespace OrthancDatabases
       db.Open();
 
       MySQLTransaction t(db);
-      db.Execute("DROP DATABASE IF EXISTS " + database);
-      db.Execute("CREATE DATABASE " + database);
+      db.Execute("DROP DATABASE IF EXISTS " + database, false);
+      db.Execute("CREATE DATABASE " + database, false);
       t.Commit();
     }
     
     std::auto_ptr<MySQLDatabase> db(new MySQLDatabase(parameters_));
 
     db->Open();
-    db->Execute("ALTER DATABASE " + parameters_.GetDatabase() + 
-                " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    db->Execute("SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+    
+    db->Execute("SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE", false);
 
+    if (parameters_.HasLock())
+    {
+      db->AdvisoryLock(42 /* some arbitrary constant */);
+    }
+    
     {
       MySQLTransaction t(*db);
 
+      db->Execute("ALTER DATABASE " + parameters_.GetDatabase() + 
+                  " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", false);
+    
       if (!db->DoesTableExist(t, "Resources"))
       {
         std::string query;
 
         Orthanc::EmbeddedResources::GetFileResource
           (query, Orthanc::EmbeddedResources::MYSQL_PREPARE_INDEX);
-        db->Execute(query);
+        db->Execute(query, true);
 
         SetGlobalIntegerProperty(*db, t, Orthanc::GlobalProperty_DatabaseSchemaVersion, expectedVersion);
         SetGlobalIntegerProperty(*db, t, Orthanc::GlobalProperty_DatabasePatchLevel, 1);
       }
-
-      t.Commit();
-    }
-
-    {
-      MySQLTransaction t(*db);
 
       if (!db->DoesTableExist(t, "Resources"))
       {
@@ -142,7 +143,7 @@ namespace OrthancDatabases
         throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);        
       }
 
-      t.Rollback();
+      t.Commit();
     }
           
     return db.release();

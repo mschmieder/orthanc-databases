@@ -21,7 +21,6 @@
 
 #include "PostgreSQLStorageArea.h"
 
-#include "../../Framework/Common/FileValue.h"
 #include "../../Framework/PostgreSQL/PostgreSQLTransaction.h"
 
 #include <Plugins/Samples/Common/OrthancPluginCppWrapper.h>
@@ -73,83 +72,5 @@ namespace OrthancDatabases
     parameters_(parameters),
     clearAll_(false)
   {
-  }
-
-
-  void PostgreSQLStorageArea::Create(DatabaseManager::Transaction& transaction,
-                                     const std::string& uuid,
-                                     const void* content,
-                                     size_t size,
-                                     OrthancPluginContentType type)
-  {
-    DatabaseManager::CachedStatement statement(
-      STATEMENT_FROM_HERE, GetManager(),
-      "INSERT INTO StorageArea VALUES (${uuid}, ${content}, ${type})");
-     
-    statement.SetParameterType("uuid", ValueType_Utf8String);
-    statement.SetParameterType("content", ValueType_File);
-    statement.SetParameterType("type", ValueType_Integer64);
-
-    Dictionary args;
-    args.SetUtf8Value("uuid", uuid);
-    args.SetFileValue("content", content, size);
-    args.SetIntegerValue("type", type);
-     
-    statement.Execute(args);
-  }
-
-
-  void PostgreSQLStorageArea::Read(void*& content,
-                                   size_t& size,
-                                   DatabaseManager::Transaction& transaction, 
-                                   const std::string& uuid,
-                                   OrthancPluginContentType type) 
-  {
-    DatabaseManager::CachedStatement statement(
-      STATEMENT_FROM_HERE, GetManager(),
-      "SELECT content FROM StorageArea WHERE uuid=${uuid} AND type=${type}");
-     
-    statement.SetParameterType("uuid", ValueType_Utf8String);
-    statement.SetParameterType("type", ValueType_Integer64);
-
-    Dictionary args;
-    args.SetUtf8Value("uuid", uuid);
-    args.SetIntegerValue("type", type);
-     
-    statement.Execute(args);
-
-    if (statement.IsDone())
-    {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
-    }
-    else if (statement.GetResultFieldsCount() != 1 ||
-             statement.GetResultField(0).GetType() != ValueType_File)
-    {
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);        
-    }
-    else
-    {
-      const FileValue& value = dynamic_cast<const FileValue&>(statement.GetResultField(0));
-      ReadFromString(content, size, value.GetContent());
-    }
-  }
-
-
-  void PostgreSQLStorageArea::Remove(DatabaseManager::Transaction& transaction,
-                                     const std::string& uuid,
-                                     OrthancPluginContentType type)
-  {
-    DatabaseManager::CachedStatement statement(
-      STATEMENT_FROM_HERE, GetManager(),
-      "DELETE FROM StorageArea WHERE uuid=${uuid} AND type=${type}");
-     
-    statement.SetParameterType("uuid", ValueType_Utf8String);
-    statement.SetParameterType("type", ValueType_Integer64);
-
-    Dictionary args;
-    args.SetUtf8Value("uuid", uuid);
-    args.SetIntegerValue("type", type);
-     
-    statement.Execute(args);
   }
 }

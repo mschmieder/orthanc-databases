@@ -60,17 +60,34 @@ int main(int argc, char **argv)
 {
   if (argc < 5)
   {
-    std::cerr << "Usage: " << argv[0] << " <socket> <username> <password> <database>"
+    std::cerr << "Usage (UNIX):    " << argv[0] << " <socket> <username> <password> <database>"
+              << std::endl
+              << "Usage (Windows): " << argv[0] << " <host> <port> <username> <password> <database>"
               << std::endl << std::endl
-              << "Example: " << argv[0] << " /var/run/mysqld/mysqld.sock root root orthanctest"
+              << "Example (UNIX):    " << argv[0] << " /var/run/mysqld/mysqld.sock root root orthanctest"
+              << std::endl
+              << "Example (Windows): " << argv[0] << " localhost 3306 root root orthanctest"
               << std::endl << std::endl;
     return -1;
   }
 
-  globalParameters_.SetUnixSocket(argv[1]);
-  globalParameters_.SetUsername(argv[2]);
-  globalParameters_.SetPassword(argv[3]);
-  globalParameters_.SetDatabase(argv[4]);
+  if (argc == 5)
+  {
+    // UNIX
+    globalParameters_.SetUnixSocket(argv[1]);
+    globalParameters_.SetUsername(argv[2]);
+    globalParameters_.SetPassword(argv[3]);
+    globalParameters_.SetDatabase(argv[4]);
+  }
+  else
+  {
+    // Windows
+    globalParameters_.SetHost(argv[1]);
+    globalParameters_.SetPort(boost::lexical_cast<unsigned int>(argv[2]));
+    globalParameters_.SetUsername(argv[3]);
+    globalParameters_.SetPassword(argv[4]);
+    globalParameters_.SetDatabase(argv[5]);
+  }
 
   ::testing::InitGoogleTest(&argc, argv);
   Orthanc::Logging::Initialize();

@@ -145,38 +145,127 @@ namespace OrthancDatabases
       Close();
       throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);        
     }
+  }
 
-    if (parameters_.HasLock())
+
+  namespace
+  {
+    class ResultWrapper : public boost::noncopyable
     {
-      try
+    private:
+      MYSQL_RES *result_;
+
+    public:
+      ResultWrapper(MySQLDatabase& mysql,
+                    const std::string& sql) :
+        result_(NULL)
       {
-        Query query("SELECT GET_LOCK('Lock', 0);", false);
-        MySQLStatement statement(*this, query);
-
-        MySQLTransaction t(*this);
-        Dictionary args;
-
-        std::auto_ptr<IResult> result(t.Execute(statement, args));
-
-        if (result->IsDone() ||
-            result->GetField(0).GetType() != ValueType_Integer64 ||
-            dynamic_cast<const Integer64Value&>(result->GetField(0)).GetValue() != 1)
+        if (mysql_real_query(mysql.GetObject(), sql.c_str(), sql.size()))
         {
+          mysql.LogError();
           throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);
         }
 
-        t.Commit();
+        result_ = mysql_use_result(mysql.GetObject());
+        if (result_ == NULL)
+        {
+          mysql.LogError();
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);
+        }
       }
-      catch (Orthanc::OrthancException&)
+
+      ~ResultWrapper()
       {
-        LOG(ERROR) << "The MySQL database is locked by another instance of Orthanc";
-        Close();
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);
+        if (result_ != NULL)
+        {
+          mysql_free_result(result_);
+          result_ = NULL;
+        }
       }
+
+      MYSQL_RES *GetObject()
+      {
+        return result_;
+      }
+    };
+  }
+
+
+  bool MySQLDatabase::LookupGlobalStringVariable(std::string& value,
+                                                 const std::string& variable)
+  {
+    ResultWrapper result(*this, "SELECT @@global." + variable);
+
+    MYSQL_ROW row = mysql_fetch_row(result.GetObject());
+    if (mysql_errno(mysql_) == 0 &&
+        row &&
+        row[0])
+    {
+      value = std::string(row[0]);
+      return true;
+    }
+    else
+    {
+      return false;
     }
   }
 
   
+  bool MySQLDatabase::LookupGlobalIntegerVariable(int64_t& value,
+                                                  const std::string& variable)
+  {
+    std::string s;
+    
+    if (LookupGlobalStringVariable(s, variable))
+    {
+      try
+      {
+        value = boost::lexical_cast<int64_t>(s);
+        return true;
+      }
+      catch (boost::bad_lexical_cast&)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);
+      }
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+
+  void MySQLDatabase::AdvisoryLock(int32_t lock)
+  {
+    try
+    {
+      Query query("SELECT GET_LOCK('Lock" +
+                  boost::lexical_cast<std::string>(lock) + "', 0);", false);
+      MySQLStatement statement(*this, query);
+
+      MySQLTransaction t(*this);
+      Dictionary args;
+
+      std::auto_ptr<IResult> result(t.Execute(statement, args));
+
+      if (result->IsDone() ||
+          result->GetField(0).GetType() != ValueType_Integer64 ||
+          dynamic_cast<const Integer64Value&>(result->GetField(0)).GetValue() != 1)
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);
+      }
+
+      t.Commit();
+    }
+    catch (Orthanc::OrthancException&)
+    {
+      LOG(ERROR) << "The MySQL database is locked by another instance of Orthanc";
+      Close();
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);
+    }
+  }
+  
+
   bool MySQLDatabase::DoesTableExist(MySQLTransaction& transaction,
                                      const std::string& name)
   {
@@ -212,7 +301,8 @@ namespace OrthancDatabases
   }
 
 
-  void MySQLDatabase::Execute(const std::string& sql)
+  void MySQLDatabase::Execute(const std::string& sql,
+                              bool arobaseSeparator)
   {
     if (mysql_ == NULL)
     {
@@ -231,8 +321,11 @@ namespace OrthancDatabases
 
       if (!s.empty())
       {
-        // Replace the escape character "@" by a semicolon
-        std::replace(s.begin(), s.end(), '@', ';');
+        if (arobaseSeparator)
+        {
+          // Replace the escape character "@" by a semicolon
+          std::replace(s.begin(), s.end(), '@', ';');
+        }
       
         LOG(TRACE) << "MySQL: " << s;
         CheckErrorCode(mysql_query(mysql_, s.c_str()));

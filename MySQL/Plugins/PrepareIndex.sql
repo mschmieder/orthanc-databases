@@ -3,9 +3,6 @@ CREATE TABLE GlobalProperties(
        value TEXT
        );
 
--- Set GlobalProperty_DatabaseSchemaVersion
-INSERT INTO GlobalProperties VALUES (1, '6');
-       
 CREATE TABLE Resources(
        internalId BIGINT NOT NULL AUTO_INCREMENT,
        resourceType INTEGER NOT NULL,

@@ -64,21 +64,5 @@ namespace OrthancDatabases
     {
       clearAll_ = clear;
     }
-
-    virtual void Create(DatabaseManager::Transaction& transaction,
-                        const std::string& uuid,
-                        const void* content,
-                        size_t size,
-                        OrthancPluginContentType type);
-
-    virtual void Read(void*& content,
-                      size_t& size,
-                      DatabaseManager::Transaction& transaction, 
-                      const std::string& uuid,
-                      OrthancPluginContentType type);
-
-    virtual void Remove(DatabaseManager::Transaction& transaction,
-                        const std::string& uuid,
-                        OrthancPluginContentType type);
   };
 }

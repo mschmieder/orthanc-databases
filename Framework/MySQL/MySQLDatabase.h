@@ -58,7 +58,16 @@ namespace OrthancDatabases
 
     void Open();
 
-    void Execute(const std::string& sql);
+    bool LookupGlobalStringVariable(std::string& value,
+                                    const std::string& variable);
+    
+    bool LookupGlobalIntegerVariable(int64_t& value,
+                                     const std::string& variable);
+
+    void AdvisoryLock(int32_t lock);
+
+    void Execute(const std::string& sql,
+                 bool arobaseSeparator);
 
     bool DoesTableExist(MySQLTransaction& transaction,
                         const std::string& name);

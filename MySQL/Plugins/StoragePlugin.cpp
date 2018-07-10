@@ -19,11 +19,112 @@
  **/
 
 
-#include "../../Framework/MySQL/MySQLDatabase.h"
 #include "../../Framework/Plugins/StorageBackend.h"
 
-#include <Plugins/Samples/Common/OrthancPluginCppWrapper.h>
 #include <Core/Logging.h>
+
+
+#include "../../Framework/Common/Integer64Value.h"
+#include "../../Framework/MySQL/MySQLDatabase.h"
+#include "../../Framework/MySQL/MySQLResult.h"
+#include "../../Framework/MySQL/MySQLStatement.h"
+#include "../../Framework/MySQL/MySQLTransaction.h"
+
+#include <boost/math/special_functions/round.hpp>
+
+namespace OrthancDatabases
+{
+  class MySQLStorageArea : public StorageBackend
+  {
+  private:
+    class Factory : public IDatabaseFactory
+    {
+    private:
+      MySQLStorageArea&  that_;
+
+    public:
+      Factory(MySQLStorageArea& that) :
+        that_(that)
+      {
+      }
+
+      virtual Dialect GetDialect() const
+      {
+        return Dialect_MySQL;
+      }
+
+      virtual IDatabase* Open()
+      {
+        return that_.OpenInternal();
+      }
+    };
+
+    OrthancPluginContext*  context_;
+    MySQLParameters        parameters_;
+    bool                   clearAll_;
+
+    IDatabase* OpenInternal()
+    {
+      std::auto_ptr<MySQLDatabase> db(new MySQLDatabase(parameters_));
+
+      db->Open();
+
+      if (parameters_.HasLock())
+      {
+        db->AdvisoryLock(43 /* some arbitrary constant */);
+      }
+
+      {
+        MySQLTransaction t(*db);
+
+        int64_t size;
+        if (db->LookupGlobalIntegerVariable(size, "max_allowed_packet"))
+        {
+          int mb = boost::math::iround(static_cast<double>(size) /
+                                       static_cast<double>(1024 * 1024));
+          LOG(WARNING) << "Your MySQL server cannot "
+                       << "store DICOM files larger than " << mb << "MB";
+          LOG(WARNING) << "  => Consider increasing \"max_allowed_packet\" "
+                       << "in \"my.cnf\" if this limit is insufficient for your use";
+        }
+        else
+        {
+          LOG(WARNING) << "Unable to auto-detect the maximum size of DICOM "
+                       << "files that can be stored in this MySQL server";
+        }
+               
+        if (clearAll_)
+        {
+          db->Execute("DROP TABLE IF EXISTS StorageArea", false);
+        }
+
+        db->Execute("CREATE TABLE IF NOT EXISTS StorageArea("
+                    "uuid VARCHAR(64) NOT NULL PRIMARY KEY,"
+                    "content LONGBLOB NOT NULL,"
+                    "type INTEGER NOT NULL)", false);
+
+        t.Commit();
+      }
+
+      return db.release();
+    }
+
+  public:
+    MySQLStorageArea(const MySQLParameters& parameters) :
+      StorageBackend(new Factory(*this)),
+      parameters_(parameters),
+      clearAll_(false)
+    {
+    }
+
+    void SetClearAll(bool clear)
+    {
+      clearAll_ = clear;
+    }
+  };
+}
+
+
 
 
 static bool DisplayPerformanceWarning()
@@ -80,8 +181,9 @@ extern "C"
 
     try
     {
-      // TODO
-      //OrthancDatabases::StorageBackend::Register();
+      OrthancDatabases::MySQLParameters parameters(mysql);
+      OrthancDatabases::StorageBackend::Register
+        (context, new OrthancDatabases::MySQLStorageArea(parameters));
     }
     catch (Orthanc::OrthancException& e)
     {

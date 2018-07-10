@@ -36,9 +36,11 @@ namespace OrthancDatabases
     if (code == 1)
     {
       unsigned int error = mysql_errno(database_.GetObject());
+
       if (error == 0)
       {
-        // This case can occur if the SQL request is not a SELECT
+        // This case occurs in requests without a result (e.g. if the
+        // SQL request is not a SELECT)
         done_ = true;
       }
       else if (error == CR_SERVER_GONE_ERROR ||

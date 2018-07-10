@@ -1504,7 +1504,7 @@ namespace OrthancPlugins
 
       if (performanceWarning)
       {
-        OrthancPluginLogWarning(context, "Performance warning: The database plugin was compiled "
+        OrthancPluginLogWarning(context, "Performance warning: The database index plugin was compiled "
                                 "against an old version of the Orthanc SDK, consider upgrading");
       }
 

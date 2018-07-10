@@ -35,7 +35,7 @@ namespace OrthancDatabases
     readOnly_(true),
     active_(false)
   {
-    db_.Execute("START TRANSACTION");
+    db_.Execute("START TRANSACTION", false);
     active_ = true;
   }
 
@@ -48,7 +48,7 @@ namespace OrthancDatabases
 
       try
       {
-        db_.Execute("ROLLBACK");
+        db_.Execute("ROLLBACK", false);
       }
       catch (Orthanc::OrthancException&)
       {
@@ -61,7 +61,7 @@ namespace OrthancDatabases
   {
     if (active_)
     {
-      db_.Execute("ROLLBACK");
+      db_.Execute("ROLLBACK", false);
       active_ = false;
       readOnly_ = true;
     }
@@ -77,7 +77,7 @@ namespace OrthancDatabases
   {
     if (active_)
     {
-      db_.Execute("COMMIT");
+      db_.Execute("COMMIT", false);
       active_ = false;
       readOnly_ = true;
     }

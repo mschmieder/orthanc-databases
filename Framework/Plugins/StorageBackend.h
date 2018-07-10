@@ -56,17 +56,17 @@ namespace OrthancDatabases
                         const std::string& uuid,
                         const void* content,
                         size_t size,
-                        OrthancPluginContentType type) = 0;
+                        OrthancPluginContentType type);
 
     virtual void Read(void*& content,
                       size_t& size,
                       DatabaseManager::Transaction& transaction, 
                       const std::string& uuid,
-                      OrthancPluginContentType type) = 0;
+                      OrthancPluginContentType type);
 
     virtual void Remove(DatabaseManager::Transaction& transaction,
                         const std::string& uuid,
-                        OrthancPluginContentType type) = 0;
+                        OrthancPluginContentType type);
 
     static void Register(OrthancPluginContext* context,
                          StorageBackend* backend);   // Takes ownership
