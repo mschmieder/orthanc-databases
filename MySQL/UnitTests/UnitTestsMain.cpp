@@ -20,11 +20,15 @@
 
 
 #include "../Plugins/MySQLIndex.h"
+#include "../Plugins/MySQLStorageArea.h"
 
 OrthancDatabases::MySQLParameters globalParameters_;
 
-#include "../../Framework/Plugins/IndexUnitTests.h"
+#include "../../Framework/Common/Integer64Value.h"
 #include "../../Framework/MySQL/MySQLDatabase.h"
+#include "../../Framework/MySQL/MySQLResult.h"
+#include "../../Framework/MySQL/MySQLStatement.h"
+#include "../../Framework/Plugins/IndexUnitTests.h"
 
 #include <Core/Logging.h>
 
@@ -53,6 +57,76 @@ TEST(MySQLIndex, Lock)
 
   OrthancDatabases::MySQLIndex db4(lock);
   db4.Open();
+}
+
+
+static int64_t CountFiles(OrthancDatabases::MySQLDatabase& db)
+{
+  OrthancDatabases::Query query("SELECT COUNT(*) FROM StorageArea", true);
+  OrthancDatabases::MySQLStatement s(db, query);
+  OrthancDatabases::MySQLTransaction t(db);
+  OrthancDatabases::Dictionary d;
+  std::auto_ptr<OrthancDatabases::IResult> result(s.Execute(t, d));
+  return dynamic_cast<const OrthancDatabases::Integer64Value&>(result->GetField(0)).GetValue();
+}
+
+
+TEST(MySQL, StorageArea)
+{
+  OrthancDatabases::MySQLStorageArea storageArea(globalParameters_);
+  storageArea.SetClearAll(true);
+
+  {
+    OrthancDatabases::DatabaseManager::Transaction transaction(storageArea.GetManager());
+    OrthancDatabases::MySQLDatabase& db = 
+      dynamic_cast<OrthancDatabases::MySQLDatabase&>(transaction.GetDatabase());
+
+    ASSERT_EQ(0, CountFiles(db));
+  
+    for (int i = 0; i < 10; i++)
+    {
+      std::string uuid = boost::lexical_cast<std::string>(i);
+      std::string value = "Value " + boost::lexical_cast<std::string>(i * 2);
+      storageArea.Create(transaction, uuid, value.c_str(), value.size(), OrthancPluginContentType_Unknown);
+    }
+
+    std::string tmp;
+    ASSERT_THROW(storageArea.ReadToString(tmp, transaction, "nope", OrthancPluginContentType_Unknown), 
+                 Orthanc::OrthancException);
+  
+    ASSERT_EQ(10, CountFiles(db));
+    storageArea.Remove(transaction, "5", OrthancPluginContentType_Unknown);
+
+    ASSERT_EQ(9, CountFiles(db));
+
+    for (int i = 0; i < 10; i++)
+    {
+      std::string uuid = boost::lexical_cast<std::string>(i);
+      std::string expected = "Value " + boost::lexical_cast<std::string>(i * 2);
+      std::string content;
+
+      if (i == 5)
+      {
+        ASSERT_THROW(storageArea.ReadToString(content, transaction, uuid, OrthancPluginContentType_Unknown), 
+                     Orthanc::OrthancException);
+      }
+      else
+      {
+        storageArea.ReadToString(content, transaction, uuid, OrthancPluginContentType_Unknown);
+        ASSERT_EQ(expected, content);
+      }
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+      storageArea.Remove(transaction, boost::lexical_cast<std::string>(i),
+                         OrthancPluginContentType_Unknown);
+    }
+
+    ASSERT_EQ(0, CountFiles(db));
+
+    transaction.Commit();
+  }
 }
 
 
