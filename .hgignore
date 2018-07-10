@@ -1,0 +1,4 @@
+build*
+PostgreSQL/CMakeLists.txt.user
+PostgreSQL/ThirdPartyDownloads/
+
