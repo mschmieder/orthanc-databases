@@ -264,6 +264,18 @@ namespace OrthancDatabases
       throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);
     }
   }
+
+
+  static void CheckAlphanumericString(const std::string& name)
+  {
+    for (size_t i = 0; i < name.length(); i++)
+    {
+      if (!isalnum(name[i]))
+      {
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+      }
+    }
+  }
   
 
   bool MySQLDatabase::DoesTableExist(MySQLTransaction& transaction,
@@ -274,14 +286,8 @@ namespace OrthancDatabases
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
     }
 
-    for (size_t i = 0; i < name.length(); i++)
-    {
-      if (!isalnum(name[i]))
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
-      }
-    }
-
+    CheckAlphanumericString(name);
+  
     Query query("SELECT COUNT(*) FROM information_schema.TABLES WHERE "
                 "(TABLE_SCHEMA = ${database}) AND (TABLE_NAME = ${table})", true);
     query.SetType("database", ValueType_Utf8String);
@@ -292,6 +298,33 @@ namespace OrthancDatabases
     Dictionary args;
     args.SetUtf8Value("database", parameters_.GetDatabase());
     args.SetUtf8Value("table", name);
+
+    std::auto_ptr<IResult> result(statement.Execute(transaction, args));
+    return (!result->IsDone() &&
+            result->GetFieldsCount() == 1 &&
+            result->GetField(0).GetType() == ValueType_Integer64 &&
+            dynamic_cast<const Integer64Value&>(result->GetField(0)).GetValue() == 1);            
+  }
+
+
+  bool MySQLDatabase::DoesDatabaseExist(MySQLTransaction& transaction,
+                                        const std::string& name)
+  {
+    if (mysql_ == NULL)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+
+    CheckAlphanumericString(name);
+  
+    Query query("SELECT COUNT(*) FROM information_schema.SCHEMATA "
+                "WHERE SCHEMA_NAME = ${database}", true);
+    query.SetType("database", ValueType_Utf8String);
+    
+    MySQLStatement statement(*this, query);
+
+    Dictionary args;
+    args.SetUtf8Value("database", name);
 
     std::auto_ptr<IResult> result(statement.Execute(transaction, args));
     return (!result->IsDone() &&

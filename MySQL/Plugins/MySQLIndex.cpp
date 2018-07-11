@@ -82,7 +82,14 @@ namespace OrthancDatabases
       db.Open();
 
       MySQLTransaction t(db);
-      db.Execute("DROP DATABASE IF EXISTS " + database, false);
+
+      if (!db.DoesDatabaseExist(t, database))
+      {
+        LOG(ERROR) << "Inexistent database, please create it first: " << database;
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+      }
+      
+      db.Execute("DROP DATABASE " + database, false);
       db.Execute("CREATE DATABASE " + database, false);
       t.Commit();
     }

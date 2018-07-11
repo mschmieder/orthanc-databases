@@ -125,4 +125,17 @@ namespace OrthancDatabases
   {
     unixSocket_ = socket;
   }
+
+  
+  void MySQLParameters::Format(Json::Value& target) const
+  {
+    target = Json::objectValue;
+    target["Host"] = host_;
+    target["Username"] = username_;
+    target["Password"] = password_;
+    target["Database"] = database_;
+    target["Port"] = port_;
+    target["UnixSocket"] = unixSocket_;
+    target["Lock"] = lock_;
+  }
 }
