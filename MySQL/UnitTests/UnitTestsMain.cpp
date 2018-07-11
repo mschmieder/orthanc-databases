@@ -145,28 +145,50 @@ int main(int argc, char **argv)
     return -1;
   }
 
-  if (argc == 5)
+  std::vector<std::string> args;
+  for (int i = 1; i < argc; i++)
   {
-    // UNIX
-    globalParameters_.SetUnixSocket(argv[1]);
-    globalParameters_.SetUsername(argv[2]);
-    globalParameters_.SetPassword(argv[3]);
-    globalParameters_.SetDatabase(argv[4]);
+    // Ignore arguments beginning with "-" to allow passing arguments
+    // to Google Test such as "--gtest_filter="
+    if (argv[i] != NULL &&
+        argv[i][0] != '-')
+    {
+      args.push_back(std::string(argv[i]));
+    }
   }
-  else
-  {
-    // Windows
-    globalParameters_.SetHost(argv[1]);
-    globalParameters_.SetPort(boost::lexical_cast<unsigned int>(argv[2]));
-    globalParameters_.SetUsername(argv[3]);
-    globalParameters_.SetPassword(argv[4]);
-    globalParameters_.SetDatabase(argv[5]);
-  }
-
+  
   ::testing::InitGoogleTest(&argc, argv);
   Orthanc::Logging::Initialize();
   Orthanc::Logging::EnableInfoLevel(true);
   Orthanc::Logging::EnableTraceLevel(true);
+  
+  if (args.size() == 4)
+  {
+    // UNIX flavor
+    globalParameters_.SetUnixSocket(args[0]);
+    globalParameters_.SetUsername(args[1]);
+    globalParameters_.SetPassword(args[2]);
+    globalParameters_.SetDatabase(args[3]);
+  }
+  else if (args.size() == 5)
+  {
+    // Windows flavor
+    globalParameters_.SetHost(args[0]);
+    globalParameters_.SetPort(boost::lexical_cast<unsigned int>(args[1]));
+    globalParameters_.SetUsername(args[2]);
+    globalParameters_.SetPassword(args[3]);
+    globalParameters_.SetDatabase(args[4]);
+  }
+  else
+  {
+    LOG(ERROR) << "Bad number of arguments";
+    return -1;
+  }
+
+  Json::Value config;
+  globalParameters_.Format(config);
+  std::cout << "Parameters of the MySQL connection: " << std::endl
+            << config.toStyledString() << std::endl;
 
   int result = RUN_ALL_TESTS();
 

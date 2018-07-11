@@ -98,5 +98,7 @@ namespace OrthancDatabases
     {
       return lock_;
     }
+
+    void Format(Json::Value& target) const;
   };
 }
