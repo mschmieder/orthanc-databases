@@ -64,6 +64,7 @@ set(DATABASES_SOURCES
   ${ORTHANC_DATABASES_ROOT}/Framework/Common/Dictionary.cpp
   ${ORTHANC_DATABASES_ROOT}/Framework/Common/FileValue.cpp
   ${ORTHANC_DATABASES_ROOT}/Framework/Common/GenericFormatter.cpp
+  ${ORTHANC_DATABASES_ROOT}/Framework/Common/ImplicitTransaction.cpp
   ${ORTHANC_DATABASES_ROOT}/Framework/Common/Integer64Value.cpp
   ${ORTHANC_DATABASES_ROOT}/Framework/Common/NullValue.cpp
   ${ORTHANC_DATABASES_ROOT}/Framework/Common/Query.cpp

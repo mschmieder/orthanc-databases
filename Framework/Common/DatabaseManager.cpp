@@ -156,11 +156,11 @@ namespace OrthancDatabases
   {
     if (transaction_.get() == NULL)
     {
-      LOG(TRACE) << "Automatically creating a database transaction";
+      LOG(TRACE) << "Automatically creating an implicit database transaction";
 
       try
       {
-        transaction_.reset(GetDatabase().CreateTransaction());
+        transaction_.reset(GetDatabase().CreateTransaction(true));
       }
       catch (Orthanc::OrthancException& e)
       {
@@ -171,6 +171,27 @@ namespace OrthancDatabases
 
     assert(transaction_.get() != NULL);
     return *transaction_;
+  }
+
+
+  void DatabaseManager::ReleaseImplicitTransaction()
+  {
+    if (transaction_.get() != NULL &&
+        transaction_->IsImplicit())
+    {
+      LOG(TRACE) << "Committing an implicit database transaction";
+
+      try
+      {
+        transaction_->Commit();
+        transaction_.reset(NULL);
+      }
+      catch (Orthanc::OrthancException& e)
+      {
+        // Don't throw the exception, as we are in CachedStatement destructor
+        LOG(ERROR) << "Error while committing an implicit database transaction: " << e.What();
+      }
+    }
   }
 
     
@@ -194,27 +215,11 @@ namespace OrthancDatabases
     {
       if (transaction_.get() != NULL)
       {
-#if 0
-        // TODO: This should be the right implementation
-        if (transaction_->IsReadOnly())
-        {
-          LOG(TRACE) << "Rollback of an uncommitted read-only transaction to start another transaction";
-          transaction_->Rollback();
-          transaction_.reset(NULL);
-        }
-        else
-        {
-          LOG(ERROR) << "Cannot rollback an uncommitted write transaction to start another transaction";
-          throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);
-        }
-#else
-        LOG(INFO) << "Committing an uncommitted transaction to start another transaction";
-        transaction_->Commit();
-        transaction_.reset(NULL);
-#endif
+        LOG(ERROR) << "Cannot start another transaction while there is an uncommitted transaction";
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);
       }
 
-      transaction_.reset(GetDatabase().CreateTransaction());
+      transaction_.reset(GetDatabase().CreateTransaction(false));
     }
     catch (Orthanc::OrthancException& e)
     {
@@ -302,6 +307,47 @@ namespace OrthancDatabases
   }
 
 
+  DatabaseManager::Transaction::Transaction(DatabaseManager& manager) :
+    lock_(manager.mutex_),
+    manager_(manager),
+    database_(manager.GetDatabase()),
+    committed_(false)
+  {
+    manager_.StartTransaction();
+  }
+
+
+  DatabaseManager::Transaction::~Transaction()
+  {
+    if (!committed_)
+    {
+      try
+      {
+        manager_.RollbackTransaction();
+      }
+      catch (Orthanc::OrthancException& e)
+      {
+        // Don't rethrow the exception as we are in a destructor
+        LOG(ERROR) << "Uncatched error during some transaction rollback: " << e.What();
+      }
+    }
+  }
+
+  
+  void DatabaseManager::Transaction::Commit()
+  {
+    if (committed_)
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+    }
+    else
+    {
+      manager_.CommitTransaction();
+      committed_ = true;
+    }
+  }
+
+  
   DatabaseManager::CachedStatement::CachedStatement(const StatementLocation& location,
                                                     DatabaseManager& manager,
                                                     const char* sql) :
@@ -327,6 +373,12 @@ namespace OrthancDatabases
     Setup(sql);
   }
 
+
+  DatabaseManager::CachedStatement::~CachedStatement()
+  {
+    manager_.ReleaseImplicitTransaction();
+  }
+  
       
   void DatabaseManager::CachedStatement::SetReadOnly(bool readOnly)
   {

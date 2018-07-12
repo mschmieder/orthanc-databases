@@ -21,30 +21,40 @@
 
 #pragma once
 
-#if ORTHANC_ENABLE_MYSQL != 1
-#  error MySQL support must be enabled to use this file
-#endif
-
-#include "MySQLDatabase.h"
-#include "../Common/ITransaction.h"
+#include "ITransaction.h"
 
 namespace OrthancDatabases
 {
-  class MySQLTransaction : public ITransaction
+  class ImplicitTransaction : public ITransaction
   {
   private:
-    MySQLDatabase&  db_;
-    bool            readOnly_;
-    bool            active_;
+    enum State
+    {
+      State_Ready,
+      State_Executed,
+      State_Committed
+    };
 
+    State   state_;
+    bool    readOnly_;
+
+    void CheckStateForExecution();
+    
+  protected:
+    virtual IResult* ExecuteInternal(IPrecompiledStatement& statement,
+                                     const Dictionary& parameters) = 0;
+
+    virtual void ExecuteWithoutResultInternal(IPrecompiledStatement& statement,
+                                              const Dictionary& parameters) = 0;
+    
   public:
-    MySQLTransaction(MySQLDatabase& db);
+    ImplicitTransaction();
 
-    virtual ~MySQLTransaction();
-
+    virtual ~ImplicitTransaction();
+    
     virtual bool IsImplicit() const
     {
-      return false;
+      return true;
     }
     
     virtual bool IsReadOnly() const
@@ -55,11 +65,11 @@ namespace OrthancDatabases
     virtual void Rollback();
     
     virtual void Commit();
-
+    
     virtual IResult* Execute(IPrecompiledStatement& statement,
                              const Dictionary& parameters);
 
-    virtual void ExecuteWithoutResult(IPrecompiledStatement& transaction,
+    virtual void ExecuteWithoutResult(IPrecompiledStatement& statement,
                                       const Dictionary& parameters);
   };
 }

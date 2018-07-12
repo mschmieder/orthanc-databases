@@ -38,6 +38,6 @@ namespace OrthancDatabases
 
     virtual IPrecompiledStatement* Compile(const Query& query) = 0;
 
-    virtual ITransaction* CreateTransaction() = 0;
+    virtual ITransaction* CreateTransaction(bool isImplicit) = 0;
   };
 }

@@ -41,6 +41,11 @@ namespace OrthancDatabases
   public:
     SQLiteTransaction(SQLiteDatabase& database);
 
+    virtual bool IsImplicit() const
+    {
+      return false;
+    }
+    
     virtual bool IsReadOnly() const
     {
       return readOnly_;

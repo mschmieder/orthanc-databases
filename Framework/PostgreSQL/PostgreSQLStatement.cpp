@@ -487,7 +487,7 @@ namespace OrthancDatabases
   };
 
 
-  IResult* PostgreSQLStatement::Execute(PostgreSQLTransaction& transaction,
+  IResult* PostgreSQLStatement::Execute(ITransaction& transaction,
                                         const Dictionary& parameters)
   {
     for (size_t i = 0; i < formatter_.GetParametersCount(); i++)
@@ -533,7 +533,7 @@ namespace OrthancDatabases
   }
 
 
-  void PostgreSQLStatement::ExecuteWithoutResult(PostgreSQLTransaction& transaction,
+  void PostgreSQLStatement::ExecuteWithoutResult(ITransaction& transaction,
                                                  const Dictionary& parameters)
   {
     std::auto_ptr<IResult> dummy(Execute(transaction, parameters));

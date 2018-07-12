@@ -23,6 +23,7 @@
 
 #include "SQLiteStatement.h"
 #include "SQLiteTransaction.h"
+#include "../Common/ImplicitTransaction.h"
 
 #include <Core/OrthancException.h>
 
@@ -41,10 +42,45 @@ namespace OrthancDatabases
   {
     return new SQLiteStatement(*this, query);
   }
-  
 
-  ITransaction* SQLiteDatabase::CreateTransaction()
+  
+  namespace
   {
-    return new SQLiteTransaction(*this);
+    class SQLiteImplicitTransaction : public ImplicitTransaction
+    {
+    private:
+      SQLiteDatabase&  db_;
+
+    protected:
+      virtual IResult* ExecuteInternal(IPrecompiledStatement& statement,
+                                       const Dictionary& parameters)
+      {
+        return dynamic_cast<SQLiteStatement&>(statement).Execute(*this, parameters);
+      }
+
+      virtual void ExecuteWithoutResultInternal(IPrecompiledStatement& statement,
+                                                const Dictionary& parameters)
+      {
+        dynamic_cast<SQLiteStatement&>(statement).ExecuteWithoutResult(*this, parameters);
+      }
+      
+    public:
+      SQLiteImplicitTransaction(SQLiteDatabase&  db) :
+        db_(db)
+      {
+      }
+    };
+  }
+  
+  ITransaction* SQLiteDatabase::CreateTransaction(bool isImplicit)
+  {
+    if (isImplicit)
+    {
+      return new SQLiteImplicitTransaction(*this);
+    }
+    else
+    {
+      return new SQLiteTransaction(*this);
+    }
   }
 }

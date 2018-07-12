@@ -28,6 +28,7 @@ OrthancDatabases::MySQLParameters globalParameters_;
 #include "../../Framework/MySQL/MySQLDatabase.h"
 #include "../../Framework/MySQL/MySQLResult.h"
 #include "../../Framework/MySQL/MySQLStatement.h"
+#include "../../Framework/MySQL/MySQLTransaction.h"
 #include "../../Framework/Plugins/IndexUnitTests.h"
 
 #include <Core/Logging.h>
@@ -126,6 +127,59 @@ TEST(MySQL, StorageArea)
     ASSERT_EQ(0, CountFiles(db));
 
     transaction.Commit();
+  }
+}
+
+
+TEST(MySQL, ImplicitTransaction)
+{
+  OrthancDatabases::MySQLDatabase::ClearDatabase(globalParameters_);  
+  OrthancDatabases::MySQLDatabase db(globalParameters_);
+  db.Open();
+
+  {
+    OrthancDatabases::MySQLTransaction t(db);
+    ASSERT_FALSE(db.DoesTableExist(t, "test"));
+    ASSERT_FALSE(db.DoesTableExist(t, "test2"));
+  }
+
+  {
+    std::auto_ptr<OrthancDatabases::ITransaction> t(db.CreateTransaction(false));
+    ASSERT_FALSE(t->IsImplicit());
+  }
+
+  {
+    OrthancDatabases::Query query("CREATE TABLE test(id INT)", false);
+    std::auto_ptr<OrthancDatabases::IPrecompiledStatement> s(db.Compile(query));
+    
+    std::auto_ptr<OrthancDatabases::ITransaction> t(db.CreateTransaction(true));
+    ASSERT_TRUE(t->IsImplicit());
+    ASSERT_THROW(t->Commit(), Orthanc::OrthancException);
+    ASSERT_THROW(t->Rollback(), Orthanc::OrthancException);
+
+    OrthancDatabases::Dictionary args;
+    t->ExecuteWithoutResult(*s, args);
+    ASSERT_THROW(t->Rollback(), Orthanc::OrthancException);
+    t->Commit();
+
+    ASSERT_THROW(t->Commit(), Orthanc::OrthancException);
+  }
+
+  {
+    // An implicit transaction does not need to be explicitely committed
+    OrthancDatabases::Query query("CREATE TABLE test2(id INT)", false);
+    std::auto_ptr<OrthancDatabases::IPrecompiledStatement> s(db.Compile(query));
+    
+    std::auto_ptr<OrthancDatabases::ITransaction> t(db.CreateTransaction(true));
+
+    OrthancDatabases::Dictionary args;
+    t->ExecuteWithoutResult(*s, args);
+  }
+
+  {
+    OrthancDatabases::MySQLTransaction t(db);
+    ASSERT_TRUE(db.DoesTableExist(t, "test"));
+    ASSERT_TRUE(db.DoesTableExist(t, "test2"));
   }
 }
 

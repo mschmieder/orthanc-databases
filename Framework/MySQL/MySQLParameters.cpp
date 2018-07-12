@@ -104,6 +104,22 @@ namespace OrthancDatabases
   
   void MySQLParameters::SetDatabase(const std::string& database)
   {
+    if (database.empty())
+    {
+      LOG(ERROR) << "Empty database name";
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+    
+    for (size_t i = 0; i < database.length(); i++)
+    {
+      if (!isalnum(database [i]))
+      {
+        LOG(ERROR) << "Only alphanumeric characters are allowed in a "
+                   << "MySQL database name: \"" << database << "\"";
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);          
+      }
+    }
+    
     database_ = database;
   }
 

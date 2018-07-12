@@ -24,6 +24,7 @@
 #include "MySQLResult.h"
 #include "MySQLStatement.h"
 #include "MySQLTransaction.h"
+#include "../Common/ImplicitTransaction.h"
 #include "../Common/Integer64Value.h"
 
 #include <Core/Logging.h>
@@ -104,7 +105,7 @@ namespace OrthancDatabases
   }
 
   
-  void MySQLDatabase::Open()
+  void MySQLDatabase::OpenInternal(const char* db)
   {
     if (mysql_ != NULL)
     {
@@ -118,9 +119,6 @@ namespace OrthancDatabases
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
     }
       
-    const char* db = (parameters_.GetDatabase().empty() ? NULL :
-                      parameters_.GetDatabase().c_str());
-
     const char* socket = (parameters_.GetUnixSocket().empty() ? NULL :
                           parameters_.GetUnixSocket().c_str());
 
@@ -144,6 +142,42 @@ namespace OrthancDatabases
       LOG(ERROR) << "Cannot set the character set to UTF8";
       Close();
       throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);        
+    }
+  }
+
+  
+  void MySQLDatabase::Open()
+  {
+    if (parameters_.GetDatabase().empty())
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);        
+    }
+    else
+    {
+      OpenInternal(parameters_.GetDatabase().c_str());
+    }
+  }
+  
+
+  void MySQLDatabase::ClearDatabase(const MySQLParameters& parameters)
+  {
+    MySQLDatabase db(parameters);
+    db.OpenRoot();
+
+    const std::string& database = parameters.GetDatabase();
+    
+    {
+      MySQLTransaction t(db);
+
+      if (!db.DoesDatabaseExist(t, database))
+      {
+        LOG(ERROR) << "Inexistent database, please create it first: " << database;
+        throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
+      }
+      
+      db.Execute("DROP DATABASE " + database, false);
+      db.Execute("CREATE DATABASE " + database, false);
+      t.Commit();
     }
   }
 
@@ -378,14 +412,51 @@ namespace OrthancDatabases
   }
 
 
-  ITransaction* MySQLDatabase::CreateTransaction()
+
+  namespace
+  {
+    class MySQLImplicitTransaction : public ImplicitTransaction
+    {
+    private:
+      MySQLDatabase&  db_;
+
+    protected:
+      virtual IResult* ExecuteInternal(IPrecompiledStatement& statement,
+                                       const Dictionary& parameters)
+      {
+        return dynamic_cast<MySQLStatement&>(statement).Execute(*this, parameters);
+      }
+
+      virtual void ExecuteWithoutResultInternal(IPrecompiledStatement& statement,
+                                                const Dictionary& parameters)
+      {
+        dynamic_cast<MySQLStatement&>(statement).ExecuteWithoutResult(*this, parameters);
+      }
+      
+    public:
+      MySQLImplicitTransaction(MySQLDatabase&  db) :
+        db_(db)
+      {
+      }
+    };
+  }
+  
+
+  ITransaction* MySQLDatabase::CreateTransaction(bool isImplicit)
   {
     if (mysql_ == NULL)
     {
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
     }
 
-    return new MySQLTransaction(*this);
+    if (isImplicit)
+    {
+      return new MySQLImplicitTransaction(*this);
+    }
+    else
+    {
+      return new MySQLTransaction(*this);
+    }
   }
 
   

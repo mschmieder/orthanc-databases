@@ -109,10 +109,10 @@ namespace OrthancDatabases
       return database_;
     }
 
-    IResult* Execute(PostgreSQLTransaction& transaction,
+    IResult* Execute(ITransaction& transaction,
                      const Dictionary& parameters);
 
-    void ExecuteWithoutResult(PostgreSQLTransaction& transaction,
+    void ExecuteWithoutResult(ITransaction& transaction,
                               const Dictionary& parameters);
   };
 }

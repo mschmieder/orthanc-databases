@@ -26,7 +26,6 @@
 #endif
 
 #include "MySQLDatabase.h"
-#include "MySQLTransaction.h"
 #include "../Common/GenericFormatter.h"
 
 namespace OrthancDatabases
@@ -69,10 +68,10 @@ namespace OrthancDatabases
 
     IValue* FetchResultField(size_t i);
 
-    IResult* Execute(MySQLTransaction& transaction,
+    IResult* Execute(ITransaction& transaction,
                      const Dictionary& parameters);
 
-    void ExecuteWithoutResult(MySQLTransaction& transaction,
+    void ExecuteWithoutResult(ITransaction& transaction,
                               const Dictionary& parameters);
   };
 }
