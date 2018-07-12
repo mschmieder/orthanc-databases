@@ -94,5 +94,7 @@ namespace OrthancDatabases
     virtual ITransaction* CreateTransaction(bool isImplicit);
 
     static void GlobalFinalization();
+
+    static bool IsAlphanumericString(const std::string& s);
   };
 }

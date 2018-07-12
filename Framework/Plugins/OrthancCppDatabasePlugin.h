@@ -1504,8 +1504,16 @@ namespace OrthancPlugins
 
       if (performanceWarning)
       {
-        OrthancPluginLogWarning(context, "Performance warning: The database index plugin was compiled "
-                                "against an old version of the Orthanc SDK, consider upgrading");
+        char info[1024];
+        sprintf(info, 
+                "Performance warning: The database index plugin was compiled "
+                "against an old version of the Orthanc SDK (%d.%d.%d): "
+                "Consider upgrading to version 1.4.0 of the Orthanc SDK",
+                ORTHANC_PLUGINS_MINIMAL_MAJOR_NUMBER,
+                ORTHANC_PLUGINS_MINIMAL_MINOR_NUMBER,
+                ORTHANC_PLUGINS_MINIMAL_REVISION_NUMBER);
+
+        OrthancPluginLogWarning(context, info);
       }
 
       OrthancPluginDatabaseContext* database =

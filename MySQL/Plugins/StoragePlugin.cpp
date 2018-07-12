@@ -21,41 +21,21 @@
 
 #include "MySQLStorageArea.h"
 #include "../../Framework/MySQL/MySQLDatabase.h"
+#include "../../Framework/Plugins/PluginInitialization.h"
 
 #include <Core/Logging.h>
-
-
-static bool DisplayPerformanceWarning()
-{
-  (void) DisplayPerformanceWarning;   // Disable warning about unused function
-  LOG(WARNING) << "Performance warning in MySQL storage area: "
-               << "Non-release build, runtime debug assertions are turned on";
-  return true;
-}
 
 
 extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
   {
-    Orthanc::Logging::Initialize(context);
-
-    assert(DisplayPerformanceWarning());
-
-    /* Check the version of the Orthanc core */
-    if (OrthancPluginCheckVersion(context) == 0)
+    if (!OrthancDatabases::InitializePlugin
+        (context, "MySQL storage area", 
+         "Stores the Orthanc storage area into a MySQL database."))
     {
-      char info[1024];
-      sprintf(info, "Your version of Orthanc (%s) must be above %d.%d.%d to run this plugin",
-              context->orthancVersion,
-              ORTHANC_PLUGINS_MINIMAL_MAJOR_NUMBER,
-              ORTHANC_PLUGINS_MINIMAL_MINOR_NUMBER,
-              ORTHANC_PLUGINS_MINIMAL_REVISION_NUMBER);
-      OrthancPluginLogError(context, info);
       return -1;
     }
-
-    OrthancPluginSetDescription(context, "Stores the Orthanc storage area into a MySQL database.");
 
     OrthancPlugins::OrthancConfiguration configuration(context);
 

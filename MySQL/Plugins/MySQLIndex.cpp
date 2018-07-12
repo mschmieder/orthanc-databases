@@ -56,6 +56,11 @@ namespace OrthancDatabases
       throw Orthanc::OrthancException(Orthanc::ErrorCode_Plugin);
     }
 
+    if (!MySQLDatabase::IsAlphanumericString(parameters_.GetDatabase()))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
+
     if (clearAll_)
     {
       MySQLDatabase::ClearDatabase(parameters_);
