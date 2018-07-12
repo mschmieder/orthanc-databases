@@ -300,18 +300,6 @@ namespace OrthancDatabases
   }
 
 
-  static void CheckAlphanumericString(const std::string& name)
-  {
-    for (size_t i = 0; i < name.length(); i++)
-    {
-      if (!isalnum(name[i]))
-      {
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
-      }
-    }
-  }
-  
-
   bool MySQLDatabase::DoesTableExist(MySQLTransaction& transaction,
                                      const std::string& name)
   {
@@ -320,7 +308,10 @@ namespace OrthancDatabases
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
     }
 
-    CheckAlphanumericString(name);
+    if (!IsAlphanumericString(name))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
   
     Query query("SELECT COUNT(*) FROM information_schema.TABLES WHERE "
                 "(TABLE_SCHEMA = ${database}) AND (TABLE_NAME = ${table})", true);
@@ -349,7 +340,10 @@ namespace OrthancDatabases
       throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
     }
 
-    CheckAlphanumericString(name);
+    if (!IsAlphanumericString(name))
+    {
+      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
+    }
   
     Query query("SELECT COUNT(*) FROM information_schema.SCHEMATA "
                 "WHERE SCHEMA_NAME = ${database}", true);
@@ -464,4 +458,18 @@ namespace OrthancDatabases
   {
     mysql_library_end();
   } 
+
+
+  bool MySQLDatabase::IsAlphanumericString(const std::string& s)
+  {
+    for (size_t i = 0; i < s.length(); i++)
+    {
+      if (!isalnum(s[i]))
+      {
+        return false;
+      }
+    }
+
+    return true;
+  }
 }
