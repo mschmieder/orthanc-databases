@@ -48,7 +48,8 @@ namespace OrthancDatabases
         break;
 
       default:
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+        LOG(ERROR) << "Internal error in ImplicitTransaction destructor";
+        break;
     }
   }
 
