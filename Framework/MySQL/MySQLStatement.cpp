@@ -422,7 +422,7 @@ namespace OrthancDatabases
   }
 
 
-  IResult* MySQLStatement::Execute(MySQLTransaction& transaction,
+  IResult* MySQLStatement::Execute(ITransaction& transaction,
                                    const Dictionary& parameters)
   {
     std::list<int>            intParameters;
@@ -525,7 +525,7 @@ namespace OrthancDatabases
   }
 
 
-  void MySQLStatement::ExecuteWithoutResult(MySQLTransaction& transaction,
+  void MySQLStatement::ExecuteWithoutResult(ITransaction& transaction,
                                             const Dictionary& parameters)
   {
     std::auto_ptr<IResult> dummy(Execute(transaction, parameters));

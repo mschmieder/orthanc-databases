@@ -40,6 +40,8 @@ namespace OrthancDatabases
     MySQLParameters  parameters_;
     MYSQL           *mysql_;
 
+    void OpenInternal(const char* database);
+    
     void Close();
 
   public:
@@ -57,6 +59,13 @@ namespace OrthancDatabases
     MYSQL* GetObject();
 
     void Open();
+
+    void OpenRoot()
+    {
+      OpenInternal(NULL);
+    }
+
+    static void ClearDatabase(const MySQLParameters& parameters);
 
     bool LookupGlobalStringVariable(std::string& value,
                                     const std::string& variable);
@@ -82,7 +91,7 @@ namespace OrthancDatabases
 
     virtual IPrecompiledStatement* Compile(const Query& query);
 
-    virtual ITransaction* CreateTransaction();
+    virtual ITransaction* CreateTransaction(bool isImplicit);
 
     static void GlobalFinalization();
   };

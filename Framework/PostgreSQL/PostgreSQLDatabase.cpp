@@ -24,6 +24,7 @@
 #include "PostgreSQLResult.h"
 #include "PostgreSQLStatement.h"
 #include "PostgreSQLTransaction.h"
+#include "../Common/ImplicitTransaction.h"
 
 #include <Core/Logging.h>
 #include <Core/OrthancException.h>
@@ -192,8 +193,44 @@ namespace OrthancDatabases
   }
 
 
-  ITransaction* PostgreSQLDatabase::CreateTransaction()
+  namespace
   {
-    return new PostgreSQLTransaction(*this);
+    class PostgreSQLImplicitTransaction : public ImplicitTransaction
+    {
+    private:
+      PostgreSQLDatabase&  db_;
+
+    protected:
+      virtual IResult* ExecuteInternal(IPrecompiledStatement& statement,
+                                       const Dictionary& parameters)
+      {
+        return dynamic_cast<PostgreSQLStatement&>(statement).Execute(*this, parameters);
+      }
+
+      virtual void ExecuteWithoutResultInternal(IPrecompiledStatement& statement,
+                                                const Dictionary& parameters)
+      {
+        dynamic_cast<PostgreSQLStatement&>(statement).ExecuteWithoutResult(*this, parameters);
+      }
+      
+    public:
+      PostgreSQLImplicitTransaction(PostgreSQLDatabase&  db) :
+        db_(db)
+      {
+      }
+    };
+  }
+  
+  
+  ITransaction* PostgreSQLDatabase::CreateTransaction(bool isImplicit)
+  {
+    if (isImplicit)
+    {
+      return new PostgreSQLImplicitTransaction(*this);
+    }
+    else
+    {
+      return new PostgreSQLTransaction(*this);
+    }
   }
 }

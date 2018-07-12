@@ -54,6 +54,8 @@ namespace OrthancDatabases
 
     ITransaction& GetTransaction();
 
+    void ReleaseImplicitTransaction();
+
   public:
     DatabaseManager(IDatabaseFactory* factory);  // Takes ownership
     
@@ -81,30 +83,21 @@ namespace OrthancDatabases
     void RollbackTransaction();
 
 
+    // This class is only used in the "StorageBackend"
     class Transaction : public boost::noncopyable
     {
     private:
       boost::recursive_mutex::scoped_lock  lock_;
       DatabaseManager&                     manager_;
       IDatabase&                           database_;
+      bool                                 committed_;
 
     public:
-      Transaction(DatabaseManager& manager) :
-      lock_(manager.mutex_),
-      manager_(manager),
-      database_(manager.GetDatabase())
-      {
-      }
+      Transaction(DatabaseManager& manager);
 
-      void Commit()
-      {
-        manager_.CommitTransaction();
-      }
-    
-      void Rollback()
-      {
-        manager_.RollbackTransaction();
-      }
+      ~Transaction();
+
+      void Commit();
 
       DatabaseManager& GetManager()
       {
@@ -142,6 +135,8 @@ namespace OrthancDatabases
       CachedStatement(const StatementLocation& location,
                       Transaction& transaction,
                       const char* sql);
+
+      ~CachedStatement();
 
       IDatabase& GetDatabase()
       {

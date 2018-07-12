@@ -45,20 +45,16 @@
 
 using namespace OrthancDatabases;
 
-extern OrthancDatabases::PostgreSQLParameters  globalParameters_;
+extern PostgreSQLParameters  globalParameters_;
 
 
-static OrthancDatabases::PostgreSQLDatabase* CreateTestDatabase(bool clearAll)
+static PostgreSQLDatabase* CreateTestDatabase()
 {
-  std::auto_ptr<OrthancDatabases::PostgreSQLDatabase> pg
-    (new OrthancDatabases::PostgreSQLDatabase(globalParameters_));
+  std::auto_ptr<PostgreSQLDatabase> pg
+    (new PostgreSQLDatabase(globalParameters_));
 
   pg->Open();
-
-  if (clearAll)
-  {
-    pg->ClearAll();
-  }
+  pg->ClearAll();
 
   return pg.release();
 }
@@ -75,7 +71,7 @@ static int64_t CountLargeObjects(PostgreSQLDatabase& db)
 
 TEST(PostgreSQL, Basic)
 {
-  std::auto_ptr<PostgreSQLDatabase> pg(CreateTestDatabase(true));
+  std::auto_ptr<PostgreSQLDatabase> pg(CreateTestDatabase());
 
   ASSERT_FALSE(pg->DoesTableExist("Test"));
   pg->Execute("CREATE TABLE Test(name INTEGER, value BIGINT)");
@@ -148,7 +144,7 @@ TEST(PostgreSQL, Basic)
 
 TEST(PostgreSQL, String)
 {
-  std::auto_ptr<PostgreSQLDatabase> pg(CreateTestDatabase(true));
+  std::auto_ptr<PostgreSQLDatabase> pg(CreateTestDatabase());
 
   pg->Execute("CREATE TABLE Test(name INTEGER, value VARCHAR(40))");
 
@@ -194,7 +190,7 @@ TEST(PostgreSQL, String)
 
 TEST(PostgreSQL, Transaction)
 {
-  std::auto_ptr<PostgreSQLDatabase> pg(CreateTestDatabase(true));
+  std::auto_ptr<PostgreSQLDatabase> pg(CreateTestDatabase());
 
   pg->Execute("CREATE TABLE Test(name INTEGER, value INTEGER)");
 
@@ -262,7 +258,7 @@ TEST(PostgreSQL, Transaction)
 
 TEST(PostgreSQL, LargeObject)
 {
-  std::auto_ptr<PostgreSQLDatabase> pg(CreateTestDatabase(true));
+  std::auto_ptr<PostgreSQLDatabase> pg(CreateTestDatabase());
   ASSERT_EQ(0, CountLargeObjects(*pg));
 
   pg->Execute("CREATE TABLE Test(name VARCHAR, value OID)");
@@ -340,13 +336,13 @@ TEST(PostgreSQL, LargeObject)
 
 TEST(PostgreSQL, StorageArea)
 {
-  OrthancDatabases::PostgreSQLStorageArea storageArea(globalParameters_);
+  PostgreSQLStorageArea storageArea(globalParameters_);
   storageArea.SetClearAll(true);
 
   {
-    OrthancDatabases::DatabaseManager::Transaction transaction(storageArea.GetManager());
-    OrthancDatabases::PostgreSQLDatabase& db = 
-      dynamic_cast<OrthancDatabases::PostgreSQLDatabase&>(transaction.GetDatabase());
+    DatabaseManager::Transaction transaction(storageArea.GetManager());
+    PostgreSQLDatabase& db = 
+      dynamic_cast<PostgreSQLDatabase&>(transaction.GetDatabase());
 
     ASSERT_EQ(0, CountLargeObjects(db));
   
@@ -395,3 +391,49 @@ TEST(PostgreSQL, StorageArea)
     transaction.Commit();
   }
 }
+
+
+TEST(PostgreSQL, ImplicitTransaction)
+{
+  std::auto_ptr<PostgreSQLDatabase> db(CreateTestDatabase());
+
+  ASSERT_FALSE(db->DoesTableExist("test"));
+  ASSERT_FALSE(db->DoesTableExist("test2"));
+
+  {
+    std::auto_ptr<OrthancDatabases::ITransaction> t(db->CreateTransaction(false));
+    ASSERT_FALSE(t->IsImplicit());
+  }
+
+  {
+    Query query("CREATE TABLE test(id INT)", false);
+    std::auto_ptr<IPrecompiledStatement> s(db->Compile(query));
+    
+    std::auto_ptr<ITransaction> t(db->CreateTransaction(true));
+    ASSERT_TRUE(t->IsImplicit());
+    ASSERT_THROW(t->Commit(), Orthanc::OrthancException);
+    ASSERT_THROW(t->Rollback(), Orthanc::OrthancException);
+
+    Dictionary args;
+    t->ExecuteWithoutResult(*s, args);
+    ASSERT_THROW(t->Rollback(), Orthanc::OrthancException);
+    t->Commit();
+
+    ASSERT_THROW(t->Commit(), Orthanc::OrthancException);
+  }
+
+  {
+    // An implicit transaction does not need to be explicitely committed
+    Query query("CREATE TABLE test2(id INT)", false);
+    std::auto_ptr<IPrecompiledStatement> s(db->Compile(query));
+    
+    std::auto_ptr<ITransaction> t(db->CreateTransaction(true));
+
+    Dictionary args;
+    t->ExecuteWithoutResult(*s, args);
+  }
+
+  ASSERT_TRUE(db->DoesTableExist("test"));
+  ASSERT_TRUE(db->DoesTableExist("test2"));
+}
+

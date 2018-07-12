@@ -19,14 +19,16 @@
  **/
 
 
+#include "../../Framework/SQLite/SQLiteDatabase.h"
 #include "../Plugins/SQLiteIndex.h"
-#include "../../Framework/Plugins/IndexUnitTests.h"
 
 #include <Core/Logging.h>
 #include <Core/SystemToolbox.h>
 
 #include <gtest/gtest.h>
 
+
+#include "../../Framework/Plugins/IndexUnitTests.h"
 
 
 TEST(SQLiteIndex, Lock)
@@ -56,6 +58,51 @@ TEST(SQLiteIndex, Lock)
   }
 }
 
+
+TEST(SQLite, ImplicitTransaction)
+{
+  OrthancDatabases::SQLiteDatabase db;
+  db.OpenInMemory();
+
+  ASSERT_FALSE(db.DoesTableExist("test"));
+  ASSERT_FALSE(db.DoesTableExist("test2"));
+
+  {
+    std::auto_ptr<OrthancDatabases::ITransaction> t(db.CreateTransaction(false));
+    ASSERT_FALSE(t->IsImplicit());
+  }
+
+  {
+    OrthancDatabases::Query query("CREATE TABLE test(id INT)", false);
+    std::auto_ptr<OrthancDatabases::IPrecompiledStatement> s(db.Compile(query));
+    
+    std::auto_ptr<OrthancDatabases::ITransaction> t(db.CreateTransaction(true));
+    ASSERT_TRUE(t->IsImplicit());
+    ASSERT_THROW(t->Commit(), Orthanc::OrthancException);
+    ASSERT_THROW(t->Rollback(), Orthanc::OrthancException);
+
+    OrthancDatabases::Dictionary args;
+    t->ExecuteWithoutResult(*s, args);
+    ASSERT_THROW(t->Rollback(), Orthanc::OrthancException);
+    t->Commit();
+
+    ASSERT_THROW(t->Commit(), Orthanc::OrthancException);
+  }
+
+  {
+    // An implicit transaction does not need to be explicitely committed
+    OrthancDatabases::Query query("CREATE TABLE test2(id INT)", false);
+    std::auto_ptr<OrthancDatabases::IPrecompiledStatement> s(db.Compile(query));
+    
+    std::auto_ptr<OrthancDatabases::ITransaction> t(db.CreateTransaction(true));
+
+    OrthancDatabases::Dictionary args;
+    t->ExecuteWithoutResult(*s, args);
+  }
+
+  ASSERT_TRUE(db.DoesTableExist("test"));
+  ASSERT_TRUE(db.DoesTableExist("test2"));
+}
 
 
 int main(int argc, char **argv)

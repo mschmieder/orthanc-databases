@@ -55,10 +55,10 @@ namespace OrthancDatabases
 
     Orthanc::SQLite::Statement& GetObject();
 
-    IResult* Execute(SQLiteTransaction& transaction,
+    IResult* Execute(ITransaction& transaction,
                      const Dictionary& parameters);
 
-    void ExecuteWithoutResult(SQLiteTransaction& transaction,
+    void ExecuteWithoutResult(ITransaction& transaction,
                               const Dictionary& parameters);
   };
 }

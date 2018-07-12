@@ -56,42 +56,9 @@ namespace OrthancDatabases
       throw Orthanc::OrthancException(Orthanc::ErrorCode_Plugin);
     }
 
-    if (parameters_.GetDatabase().empty())
-    {
-      LOG(ERROR) << "Empty database name";
-      throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
-    }
-    
-    for (size_t i = 0; i < parameters_.GetDatabase().length(); i++)
-    {
-      if (!isalnum(parameters_.GetDatabase() [i]))
-      {
-        LOG(ERROR) << "Only alphanumeric characters are allowed in a "
-                   << "MySQL database name: \"" << parameters_.GetDatabase() << "\"";
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);          
-      }
-    }
-    
     if (clearAll_)
     {
-      MySQLParameters p = parameters_;
-      const std::string database = p.GetDatabase();
-      p.SetDatabase("");
-
-      MySQLDatabase db(p);
-      db.Open();
-
-      MySQLTransaction t(db);
-
-      if (!db.DoesDatabaseExist(t, database))
-      {
-        LOG(ERROR) << "Inexistent database, please create it first: " << database;
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_UnknownResource);
-      }
-      
-      db.Execute("DROP DATABASE " + database, false);
-      db.Execute("CREATE DATABASE " + database, false);
-      t.Commit();
+      MySQLDatabase::ClearDatabase(parameters_);
     }
     
     std::auto_ptr<MySQLDatabase> db(new MySQLDatabase(parameters_));
