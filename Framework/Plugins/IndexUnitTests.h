@@ -144,6 +144,8 @@ TEST(IndexBackend, Basic)
 
   db.RegisterOutput(new OrthancPlugins::DatabaseBackendOutput(&context, NULL));
   db.Open();
+  db.StartTransaction();
+  
 
   std::string s;
   ASSERT_TRUE(db.LookupGlobalProperty(s, Orthanc::GlobalProperty_DatabaseSchemaVersion));
@@ -413,4 +415,6 @@ TEST(IndexBackend, Basic)
   db.DeleteResource(p2);
   ASSERT_TRUE(db.SelectPatientToRecycle(r, p3));
   ASSERT_EQ(p1, r);
+
+  db.CommitTransaction();
 }
