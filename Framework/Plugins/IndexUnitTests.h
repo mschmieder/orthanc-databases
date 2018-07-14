@@ -144,7 +144,6 @@ TEST(IndexBackend, Basic)
 
   db.RegisterOutput(new OrthancPlugins::DatabaseBackendOutput(&context, NULL));
   db.Open();
-  db.StartTransaction();
   
 
   std::string s;
@@ -381,7 +380,16 @@ TEST(IndexBackend, Basic)
 
   ASSERT_EQ(0u, db.GetUnprotectedPatientsCount());  // No patient was inserted
   ASSERT_TRUE(db.IsExistingResource(c));
-  db.DeleteResource(c);
+
+  {
+    // A transaction is needed here for MySQL, as it was not possible
+    // to implement recursive deletion of resources using pure SQL
+    // statements
+    db.StartTransaction();    
+    db.DeleteResource(c);
+    db.CommitTransaction();
+  }
+  
   ASSERT_FALSE(db.IsExistingResource(c));
   ASSERT_TRUE(db.IsExistingResource(a));
   ASSERT_TRUE(db.IsExistingResource(b));
@@ -415,6 +423,4 @@ TEST(IndexBackend, Basic)
   db.DeleteResource(p2);
   ASSERT_TRUE(db.SelectPatientToRecycle(r, p3));
   ASSERT_EQ(p1, r);
-
-  db.CommitTransaction();
 }
