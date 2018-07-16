@@ -32,9 +32,7 @@ extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
   {
-    if (!OrthancDatabases::InitializePlugin
-        (context, "MySQL index", 
-         "Stores the Orthanc index into a MySQL database."))
+    if (!OrthancDatabases::InitializePlugin(context, "MySQL", true))
     {
       return -1;
     }

@@ -21,30 +21,36 @@
 
 #include "PluginInitialization.h"
 
+#include "../Common/ImplicitTransaction.h"
+
 #include <Core/Logging.h>
 
 namespace OrthancDatabases
 {
-  static bool DisplayPerformanceWarning(const std::string& shortName)
+  static bool DisplayPerformanceWarning(const std::string& dbms,
+                                        bool isIndex)
   {
     (void) DisplayPerformanceWarning;   // Disable warning about unused function
-    LOG(WARNING) << "Performance warning in " << shortName << ": "
-                 << "Non-release build, runtime debug assertions are turned on";
+    LOG(WARNING) << "Performance warning in " << dbms
+                 << (isIndex ? " index" : " storage area")
+                 << ": Non-release build, runtime debug assertions are turned on";
     return true;
   }
 
 
   bool InitializePlugin(OrthancPluginContext* context,
-                        const std::string& shortName,
-                        const std::string& description)
+                        const std::string& dbms,
+                        bool isIndex)
   {
     Orthanc::Logging::Initialize(context);
+    ImplicitTransaction::SetErrorOnDoubleExecution(false);
 
-    assert(DisplayPerformanceWarning(shortName));
+    assert(DisplayPerformanceWarning(dbms, isIndex));
 
     /* Check the version of the Orthanc core */
 
     bool useFallback = true;
+    bool isOptimal = false;
 
 #if defined(ORTHANC_PLUGINS_VERSION_IS_ABOVE)         // Macro introduced in Orthanc 1.3.1
 #  if ORTHANC_PLUGINS_VERSION_IS_ABOVE(1, 4, 0)
@@ -53,6 +59,12 @@ namespace OrthancDatabases
       LOG(ERROR) << "Your version of Orthanc (" << context->orthancVersion 
                  << ") must be above 0.9.5 to run this plugin";
       return false;
+    }
+
+    if (OrthancPluginCheckVersionAdvanced(context, 1, 4, 0) == 1)
+    {
+      ImplicitTransaction::SetErrorOnDoubleExecution(true);
+      isOptimal = true;
     }
 
     useFallback = false;
@@ -71,6 +83,20 @@ namespace OrthancDatabases
       return false;
     }
 
+    if (!isOptimal &&
+        isIndex)
+    {
+      LOG(WARNING) << "Performance warning in " << dbms
+                   << " index: Your version of Orthanc (" 
+                   << context->orthancVersion << ") should be upgraded to 1.4.0 "
+                   << "to benefit from best performance";
+    }
+
+
+    std::string description = ("Stores the Orthanc " +
+                               std::string(isIndex ? "index" : "storage area") +
+                               " into a " + dbms + " database");
+    
     OrthancPluginSetDescription(context, description.c_str());
 
     return true;

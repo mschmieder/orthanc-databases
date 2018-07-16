@@ -28,6 +28,9 @@
 
 namespace OrthancDatabases
 {
+  static bool isErrorOnDoubleExecution_ = false;
+  
+  
   ImplicitTransaction::ImplicitTransaction() :
     state_(State_Ready),
     readOnly_(true)
@@ -92,22 +95,21 @@ namespace OrthancDatabases
         break;
 
       case State_Executed:
-#if defined(NDEBUG)
-        // Release build. Ignore such errors.
-        LOG(INFO) << "Cannot execute more than one statement in an implicit transaction";
+        if (isErrorOnDoubleExecution_)
+        {
+          /**
+           * This allows to detect errors wrt. the handling of
+           * transactions in the Orthanc core.
+           *
+           * In Orthanc <= 1.3.2: problems in "/changes" (a transaction
+           * was missing because of GetPublicId()).
+           **/
+          LOG(ERROR) << "Cannot execute more than one statement in an implicit transaction";
+          throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
+        }
+        
         break;        
-#else
-        /**
-         * Debug build. This allows to detect errors wrt. the handling
-         * of transactions in the Orthanc core.
-         *
-         * In Orthanc <= 1.3.2: problems in "/changes" (a transaction
-         * was missing because of GetPublicId()).
-         **/
-        LOG(ERROR) << "Cannot execute more than one statement in an implicit transaction";
-        throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
-#endif
-
+          
       case State_Committed:
         LOG(ERROR) << "Cannot commit twice an implicit transaction";
         throw Orthanc::OrthancException(Orthanc::ErrorCode_BadSequenceOfCalls);
@@ -146,6 +148,18 @@ namespace OrthancDatabases
     }
     
     state_ = State_Executed;
+  }
+
+
+  void ImplicitTransaction::SetErrorOnDoubleExecution(bool isError)
+  {
+    isErrorOnDoubleExecution_ = isError;
+  }
+
+
+  bool ImplicitTransaction::IsErrorOnDoubleExecution()
+  {
+    return isErrorOnDoubleExecution_;
   }
 }
 

@@ -28,9 +28,7 @@ extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
   {
-    if (!OrthancDatabases::InitializePlugin
-        (context, "PostgreSQL storage area", 
-         "Stores the Orthanc storage area into a PostgreSQL database."))
+    if (!OrthancDatabases::InitializePlugin(context, "PostgreSQL", false))
     {
       return -1;
     }

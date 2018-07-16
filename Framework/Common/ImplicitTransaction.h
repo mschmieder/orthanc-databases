@@ -71,5 +71,9 @@ namespace OrthancDatabases
 
     virtual void ExecuteWithoutResult(IPrecompiledStatement& statement,
                                       const Dictionary& parameters);
+
+    static void SetErrorOnDoubleExecution(bool isError);
+
+    static bool IsErrorOnDoubleExecution();
   };
 }
