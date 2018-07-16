@@ -1,0 +1,74 @@
+diff -urEb mariadb-connector-c-3.0.5-src.orig/include/ma_global.h mariadb-connector-c-3.0.5-src/include/ma_global.h
+--- mariadb-connector-c-3.0.5-src.orig/include/ma_global.h	2018-05-30 16:31:17.000000000 +0200
++++ mariadb-connector-c-3.0.5-src/include/ma_global.h	2018-06-12 17:08:52.578709929 +0200
+@@ -23,7 +23,7 @@
+ 
+ #ifdef _WIN32
+ #include <winsock2.h>
+-#include <Windows.h>
++#include <windows.h>
+ #include <stdlib.h>
+ #define strcasecmp _stricmp
+ #define sleep(x) Sleep(1000*(x))
+@@ -638,7 +638,9 @@
+ #error "Neither int or long is of 4 bytes width"
+ #endif
+ 
+-#if !defined(HAVE_ULONG) && !defined(HAVE_LINUXTHREADS) && !defined(__USE_MISC)
++#if defined(__LSB_VERSION__)
++typedef unsigned long	ulong;	/* Short for unsigned long */
++#elif !defined(HAVE_ULONG) && !defined(HAVE_LINUXTHREADS) && !defined(__USE_MISC)
+ typedef unsigned long	ulong;	/* Short for unsigned long */
+ #endif
+ #ifndef longlong_defined
+diff -urEb mariadb-connector-c-3.0.5-src.orig/libmariadb/ma_client_plugin.c.in mariadb-connector-c-3.0.5-src/libmariadb/ma_client_plugin.c.in
+--- mariadb-connector-c-3.0.5-src.orig/libmariadb/ma_client_plugin.c.in	2018-05-30 16:31:17.000000000 +0200
++++ mariadb-connector-c-3.0.5-src/libmariadb/ma_client_plugin.c.in	2018-06-12 16:34:45.402745736 +0200
+@@ -456,7 +456,7 @@
+ 
+ 
+ /* see <mysql/client_plugin.h> for a full description */
+-struct st_mysql_client_plugin * STDCALL
++struct st_mysql_client_plugin *
+ mysql_load_plugin(MYSQL *mysql, const char *name, int type, int argc, ...)
+ {
+   struct st_mysql_client_plugin *p;
+diff -urEb mariadb-connector-c-3.0.5-src.orig/libmariadb/ma_default.c mariadb-connector-c-3.0.5-src/libmariadb/ma_default.c
+--- mariadb-connector-c-3.0.5-src.orig/libmariadb/ma_default.c	2018-05-30 16:31:17.000000000 +0200
++++ mariadb-connector-c-3.0.5-src/libmariadb/ma_default.c	2018-06-12 16:34:33.246745949 +0200
+@@ -27,7 +27,7 @@
+ 
+ #ifdef _WIN32
+ #include <io.h>
+-#include "Shlwapi.h"
++#include "shlwapi.h"
+ 
+ static const char *ini_exts[]= {"ini", "cnf", 0};
+ #define R_OK 4
+diff -urEb mariadb-connector-c-3.0.5-src.orig/libmariadb/mariadb_lib.c mariadb-connector-c-3.0.5-src/libmariadb/mariadb_lib.c
+--- mariadb-connector-c-3.0.5-src.orig/libmariadb/mariadb_lib.c	2018-05-30 16:31:17.000000000 +0200
++++ mariadb-connector-c-3.0.5-src/libmariadb/mariadb_lib.c	2018-06-12 16:34:33.246745949 +0200
+@@ -69,7 +69,7 @@
+ #endif
+ #include <mysql/client_plugin.h>
+ #ifdef _WIN32
+-#include "Shlwapi.h"
++#include "shlwapi.h"
+ #endif
+ 
+ #define ASYNC_CONTEXT_DEFAULT_STACK_SIZE (4096*15)
+diff -urEb mariadb-connector-c-3.0.5-src.orig/plugins/pvio/pvio_socket.c mariadb-connector-c-3.0.5-src/plugins/pvio/pvio_socket.c
+--- mariadb-connector-c-3.0.5-src.orig/plugins/pvio/pvio_socket.c	2018-05-30 16:31:17.000000000 +0200
++++ mariadb-connector-c-3.0.5-src/plugins/pvio/pvio_socket.c	2018-06-12 17:21:34.554696601 +0200
+@@ -60,6 +60,11 @@
+ #define IS_SOCKET_EINTR(err) 0
+ #endif
+ 
++#if defined(__LSB_VERSION__)
++// WARNING: This definition might break true Linux Standard Base compatibility!
++#define MSG_DONTWAIT 0x40 /* Nonblocking IO.  */
++#endif
++
+ #ifndef SOCKET_ERROR
+ #define SOCKET_ERROR -1
+ #endif
