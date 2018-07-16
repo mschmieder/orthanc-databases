@@ -33,7 +33,7 @@ namespace OrthancDatabases
     std::vector<ValueType>    parametersType_;
       
   public:
-    GenericFormatter(Dialect dialect) :
+    explicit GenericFormatter(Dialect dialect) :
       dialect_(dialect)
     {
     }

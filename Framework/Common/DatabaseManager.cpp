@@ -364,8 +364,8 @@ namespace OrthancDatabases
   DatabaseManager::CachedStatement::CachedStatement(const StatementLocation& location,
                                                     Transaction& transaction,
                                                     const char* sql) :
-    lock_(manager_.mutex_),
     manager_(transaction.GetManager()),
+    lock_(manager_.mutex_),
     database_(manager_.GetDatabase()),
     location_(location),
     transaction_(manager_.GetTransaction())
