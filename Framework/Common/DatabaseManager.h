@@ -57,7 +57,7 @@ namespace OrthancDatabases
     void ReleaseImplicitTransaction();
 
   public:
-    DatabaseManager(IDatabaseFactory* factory);  // Takes ownership
+    explicit DatabaseManager(IDatabaseFactory* factory);  // Takes ownership
     
     ~DatabaseManager()
     {
@@ -93,7 +93,7 @@ namespace OrthancDatabases
       bool                                 committed_;
 
     public:
-      Transaction(DatabaseManager& manager);
+      explicit Transaction(DatabaseManager& manager);
 
       ~Transaction();
 
@@ -114,8 +114,8 @@ namespace OrthancDatabases
     class CachedStatement : public boost::noncopyable
     {
     private:
-      boost::recursive_mutex::scoped_lock  lock_;
       DatabaseManager&                     manager_;
+      boost::recursive_mutex::scoped_lock  lock_;
       IDatabase&                           database_;
       StatementLocation                    location_;
       ITransaction&                        transaction_;

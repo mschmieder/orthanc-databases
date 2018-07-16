@@ -58,7 +58,7 @@ namespace OrthancDatabases
     void Setup(const std::string& sql);
 
   public:
-    Query(const std::string& sql);
+    explicit Query(const std::string& sql);
 
     Query(const std::string& sql,
           bool isReadOnly);

@@ -104,8 +104,9 @@ namespace OrthancDatabases
   {
     PostgreSQLTransaction transaction(*this);
 
-    PostgreSQLStatement s(*this, "select pg_try_advisory_lock(" + 
-                          boost::lexical_cast<std::string>(lock) + ");");
+    Query query("select pg_try_advisory_lock(" + 
+                boost::lexical_cast<std::string>(lock) + ");", false);
+    PostgreSQLStatement s(*this, query);
 
     PostgreSQLResult result(s);
     if (result.IsDone() ||

@@ -35,7 +35,7 @@ namespace OrthancDatabases
     {
     }
 
-    FileValue(const std::string& content) :
+    explicit FileValue(const std::string& content) :
       content_(content)
     {
     }
