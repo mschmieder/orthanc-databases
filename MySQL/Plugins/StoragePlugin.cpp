@@ -30,9 +30,7 @@ extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
   {
-    if (!OrthancDatabases::InitializePlugin
-        (context, "MySQL storage area", 
-         "Stores the Orthanc storage area into a MySQL database."))
+    if (!OrthancDatabases::InitializePlugin(context, "MySQL", false))
     {
       return -1;
     }

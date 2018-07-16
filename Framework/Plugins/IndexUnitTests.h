@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include "../Common/ImplicitTransaction.h"
+
 #include <orthanc/OrthancCDatabasePlugin.h>
 #include <OrthancServer/ServerEnumerations.h>
 
@@ -129,6 +131,8 @@ TEST(IndexBackend, Basic)
   context.orthancVersion = "mainline";
   context.Free = ::free;
   context.InvokeService = InvokeService;
+
+  ImplicitTransaction::SetErrorOnDoubleExecution(true);
 
 #if ORTHANC_ENABLE_POSTGRESQL == 1
   PostgreSQLIndex db(globalParameters_);

@@ -31,9 +31,7 @@ extern "C"
 {
   ORTHANC_PLUGINS_API int32_t OrthancPluginInitialize(OrthancPluginContext* context)
   {
-    if (!OrthancDatabases::InitializePlugin
-        (context, "SQLite index", 
-         "Stores the Orthanc index into a SQLite database."))
+    if (!OrthancDatabases::InitializePlugin(context, "SQLite", true))
     {
       return -1;
     }

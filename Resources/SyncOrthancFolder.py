@@ -11,7 +11,7 @@ import stat
 import urllib2
 
 TARGET = os.path.join(os.path.dirname(__file__), 'Orthanc')
-PLUGIN_SDK_VERSION = '0.9.5'
+PLUGIN_SDK_VERSION = [ '0.9.5', '1.4.0' ]
 REPOSITORY = 'https://bitbucket.org/sjodogne/orthanc/raw'
 
 FILES = [
@@ -52,12 +52,13 @@ for f in FILES:
                       os.path.join('Resources', f),
                       f ])
 
-for f in SDK:
-    commands.append([
-        'Orthanc-%s' % PLUGIN_SDK_VERSION, 
-        'Plugins/Include/%s' % f,
-        'Sdk-%s/%s' % (PLUGIN_SDK_VERSION, f) 
-    ])
+for version in PLUGIN_SDK_VERSION:
+    for f in SDK:
+        commands.append([
+            'Orthanc-%s' % version, 
+            'Plugins/Include/%s' % f,
+            'Sdk-%s/%s' % (version, f) 
+        ])
 
 
 pool = multiprocessing.Pool(10)  # simultaneous downloads
