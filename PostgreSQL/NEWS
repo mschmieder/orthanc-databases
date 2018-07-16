@@ -1,6 +1,10 @@
 Pending changes in the mainline
 ===============================
 
+
+Release 2.2 (2018-16-16)
+========================
+
 !! Important remark when upgrading from an older version of the plugin:
 
    The plugin will create a new index to improve search performance.
@@ -12,7 +16,7 @@ Pending changes in the mainline
 * Migration into the "orthanc-databases" repository
 * Full refactoring to share code with MySQL
 * Fix issue 41 (Additional range IdentifierConstraintType in Orthanc)
-  => This fix requires SDK version: 1.4.0 <=
+  !! This fix requires Orthanc version >= 1.4.0
 * Fix issue 47 (Index improvements for PG plugin)
 * Fix issue 76 (PG connection shall reconnect/retry in case it loses
   the connection to the server)
