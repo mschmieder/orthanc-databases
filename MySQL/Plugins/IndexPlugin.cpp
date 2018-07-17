@@ -23,6 +23,7 @@
 #include "../../Framework/MySQL/MySQLDatabase.h"
 #include "../../Framework/Plugins/PluginInitialization.h"
 
+#include <Core/HttpClient.h>
 #include <Core/Logging.h>
 
 static std::auto_ptr<OrthancDatabases::MySQLIndex> backend_;
@@ -36,6 +37,8 @@ extern "C"
     {
       return -1;
     }
+
+    Orthanc::HttpClient::GlobalInitialize();
 
     OrthancPlugins::OrthancConfiguration configuration(context);
 
@@ -88,6 +91,7 @@ extern "C"
 
     backend_.reset(NULL);
     OrthancDatabases::MySQLDatabase::GlobalFinalization();
+    Orthanc::HttpClient::GlobalFinalize();
   }
 
 
