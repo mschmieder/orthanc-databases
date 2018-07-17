@@ -31,6 +31,7 @@ OrthancDatabases::MySQLParameters globalParameters_;
 #include "../../Framework/MySQL/MySQLTransaction.h"
 #include "../../Framework/Plugins/IndexUnitTests.h"
 
+#include <Core/HttpClient.h>
 #include <Core/Logging.h>
 
 #include <gtest/gtest.h>
@@ -215,6 +216,7 @@ int main(int argc, char **argv)
   Orthanc::Logging::Initialize();
   Orthanc::Logging::EnableInfoLevel(true);
   Orthanc::Logging::EnableTraceLevel(true);
+  Orthanc::HttpClient::GlobalInitialize();
   
   if (args.size() == 4)
   {
@@ -246,6 +248,7 @@ int main(int argc, char **argv)
 
   int result = RUN_ALL_TESTS();
 
+  Orthanc::HttpClient::GlobalFinalize();
   Orthanc::Logging::Finalize();
 
   OrthancDatabases::MySQLDatabase::GlobalFinalization();

@@ -23,6 +23,7 @@
 #include "../../Framework/MySQL/MySQLDatabase.h"
 #include "../../Framework/Plugins/PluginInitialization.h"
 
+#include <Core/HttpClient.h>
 #include <Core/Logging.h>
 
 
@@ -34,6 +35,8 @@ extern "C"
     {
       return -1;
     }
+
+    Orthanc::HttpClient::GlobalInitialize();
 
     OrthancPlugins::OrthancConfiguration configuration(context);
 
@@ -82,6 +85,7 @@ extern "C"
 
     OrthancDatabases::StorageBackend::Finalize();
     OrthancDatabases::MySQLDatabase::GlobalFinalization();
+    Orthanc::HttpClient::GlobalFinalize();
   }
 
 
