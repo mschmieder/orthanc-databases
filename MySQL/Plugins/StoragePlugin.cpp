@@ -25,6 +25,7 @@
 
 #include <Core/HttpClient.h>
 #include <Core/Logging.h>
+#include <Core/Toolbox.h>
 
 
 extern "C"
@@ -36,6 +37,7 @@ extern "C"
       return -1;
     }
 
+    Orthanc::Toolbox::InitializeOpenSsl();
     Orthanc::HttpClient::GlobalInitialize();
 
     OrthancPlugins::OrthancConfiguration configuration(context);
@@ -86,6 +88,7 @@ extern "C"
     OrthancDatabases::StorageBackend::Finalize();
     OrthancDatabases::MySQLDatabase::GlobalFinalization();
     Orthanc::HttpClient::GlobalFinalize();
+    Orthanc::Toolbox::FinalizeOpenSsl();
   }
 
 
