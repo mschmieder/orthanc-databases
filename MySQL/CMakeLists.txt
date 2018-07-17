@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(OrthancMySQL)
 
-set(ORTHANC_PLUGIN_VERSION "1.0")
+set(ORTHANC_PLUGIN_VERSION "mainline")
 
 if (ORTHANC_PLUGIN_VERSION STREQUAL "mainline")
   set(ORTHANC_FRAMEWORK_VERSION "mainline")
