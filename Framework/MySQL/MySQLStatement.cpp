@@ -151,6 +151,7 @@ namespace OrthancDatabases
             case 45:   // utf8mb4_general_ci
             case 46:   // utf8mb4_bin
             case 224:  // utf8mb4_unicode_ci  => RECOMMENDED collation
+            case 255:  // utf8mb4_0900_ai_ci  => necessary for MySQL 8.0
               // https://stackoverflow.com/questions/766809/whats-the-difference-between-utf8-general-ci-and-utf8-unicode-ci
               orthancType_ = ValueType_Utf8String;
               break;
@@ -391,6 +392,19 @@ namespace OrthancDatabases
     {
       unsigned long type = (unsigned long) CURSOR_TYPE_READ_ONLY;
       mysql_stmt_attr_set(statement_, STMT_ATTR_CURSOR_TYPE, (void*) &type);
+    }
+  }
+
+
+  MySQLStatement::~MySQLStatement()
+  {
+    try
+    {
+      Close();
+    }
+    catch (Orthanc::OrthancException&)
+    {
+      // Ignore possible exceptions due to connection loss
     }
   }
 

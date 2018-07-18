@@ -33,7 +33,13 @@ namespace OrthancDatabases
     password_.clear();
     database_.clear();
     port_ = 3306;
+
+#if defined(_WIN32)
+    unixSocket_.clear();
+#else
     unixSocket_ = "/var/run/mysqld/mysqld.sock";
+#endif
+    
     lock_ = true;
   }
 
@@ -106,7 +112,7 @@ namespace OrthancDatabases
   {
     if (database.empty())
     {
-      LOG(ERROR) << "Empty database name";
+      LOG(ERROR) << "MySQL: Empty database name";
       throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);
     }
     
@@ -114,8 +120,8 @@ namespace OrthancDatabases
     {
       if (!isalnum(database [i]))
       {
-        LOG(ERROR) << "Only alphanumeric characters are allowed in a "
-                   << "MySQL database name: \"" << database << "\"";
+        LOG(ERROR) << "MySQL: Only alphanumeric characters are allowed in a "
+                   << "database name: \"" << database << "\"";
         throw Orthanc::OrthancException(Orthanc::ErrorCode_ParameterOutOfRange);          
       }
     }
@@ -139,6 +145,13 @@ namespace OrthancDatabases
   
   void MySQLParameters::SetUnixSocket(const std::string& socket)
   {
+#if defined(_WIN32)
+    if (!socket.empty())
+    {
+      LOG(WARNING) << "MySQL: Setting an UNIX socket on Windows has no effect";
+    }
+#endif
+    
     unixSocket_ = socket;
   }
 

@@ -190,14 +190,19 @@ int main(int argc, char **argv)
 {
   if (argc < 5)
   {
-    std::cerr << "Usage (UNIX):    " << argv[0] << " <socket> <username> <password> <database>"
-              << std::endl
-              << "Usage (Windows): " << argv[0] << " <host> <port> <username> <password> <database>"
-              << std::endl << std::endl
-              << "Example (UNIX):    " << argv[0] << " /var/run/mysqld/mysqld.sock root root orthanctest"
-              << std::endl
-              << "Example (Windows): " << argv[0] << " localhost 3306 root root orthanctest"
-              << std::endl << std::endl;
+    std::cerr
+#if !defined(_WIN32)
+      << "Usage (UNIX socket):      " << argv[0] << " <socket> <username> <password> <database>"
+      << std::endl
+#endif
+      << "Usage (TCP connection):   " << argv[0] << " <host> <port> <username> <password> <database>"
+      << std::endl << std::endl
+#if !defined(_WIN32)
+      << "Example (UNIX socket):    " << argv[0] << " /var/run/mysqld/mysqld.sock root root orthanctest"
+      << std::endl
+#endif
+      << "Example (TCP connection): " << argv[0] << " localhost 3306 root root orthanctest"
+      << std::endl << std::endl;
     return -1;
   }
 
@@ -222,7 +227,8 @@ int main(int argc, char **argv)
   
   if (args.size() == 4)
   {
-    // UNIX flavor
+    // UNIX socket flavor
+    globalParameters_.SetHost("");
     globalParameters_.SetUnixSocket(args[0]);
     globalParameters_.SetUsername(args[1]);
     globalParameters_.SetPassword(args[2]);
@@ -230,12 +236,15 @@ int main(int argc, char **argv)
   }
   else if (args.size() == 5)
   {
-    // Windows flavor
+    // TCP connection flavor
     globalParameters_.SetHost(args[0]);
     globalParameters_.SetPort(boost::lexical_cast<unsigned int>(args[1]));
     globalParameters_.SetUsername(args[2]);
     globalParameters_.SetPassword(args[3]);
     globalParameters_.SetDatabase(args[4]);
+
+    // Force the use of TCP on localhost, even if UNIX sockets are available
+    globalParameters_.SetUnixSocket("");
   }
   else
   {

@@ -68,6 +68,19 @@ namespace OrthancDatabases
     }
   }
 
+
+  PostgreSQLDatabase::~PostgreSQLDatabase()
+  {
+    try
+    {
+      Close();
+    }
+    catch (Orthanc::OrthancException&)
+    {
+      // Ignore possible exceptions due to connection loss
+    }
+  }
+  
   
   void PostgreSQLDatabase::Open()
   {
