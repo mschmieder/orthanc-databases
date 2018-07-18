@@ -50,10 +50,7 @@ namespace OrthancDatabases
     {
     }
 
-    ~PostgreSQLDatabase()
-    {
-      Close();
-    }
+    ~PostgreSQLDatabase();
 
     void Open();
 

@@ -47,10 +47,7 @@ namespace OrthancDatabases
   public:
     MySQLDatabase(const MySQLParameters& parameters);
 
-    virtual ~MySQLDatabase()
-    {
-      Close();
-    }
+    virtual ~MySQLDatabase();
 
     void LogError();
 

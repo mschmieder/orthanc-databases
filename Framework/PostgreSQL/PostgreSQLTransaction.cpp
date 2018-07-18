@@ -49,6 +49,7 @@ namespace OrthancDatabases
       }
       catch (Orthanc::OrthancException&)
       {
+        // Ignore possible exceptions due to connection loss
       }
     }
   }

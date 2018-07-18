@@ -72,10 +72,7 @@ namespace OrthancDatabases
     PostgreSQLStatement(PostgreSQLDatabase& database,
                         const Query& query);
 
-    ~PostgreSQLStatement()
-    {
-      Unprepare();
-    }
+    ~PostgreSQLStatement();
     
     virtual bool IsReadOnly() const
     {

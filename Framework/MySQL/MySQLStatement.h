@@ -49,10 +49,7 @@ namespace OrthancDatabases
     MySQLStatement(MySQLDatabase& db,
                    const Query& query);
 
-    virtual ~MySQLStatement()
-    {
-      Close();
-    }
+    virtual ~MySQLStatement();
 
     virtual bool IsReadOnly() const
     {

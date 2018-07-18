@@ -46,10 +46,7 @@ namespace OrthancDatabases
   public:
     explicit PostgreSQLResult(PostgreSQLStatement& statement);
 
-    ~PostgreSQLResult()
-    {
-      Clear();
-    }
+    ~PostgreSQLResult();
 
     void Next();
 

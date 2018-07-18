@@ -105,6 +105,19 @@ namespace OrthancDatabases
   }
 
 
+  PostgreSQLResult::~PostgreSQLResult()
+  {
+    try
+    {
+      Clear();
+    }
+    catch (Orthanc::OrthancException&)
+    {
+      // Ignore possible exceptions due to connection loss
+    }
+  }
+
+
   void PostgreSQLResult::Next()
   {
     position_++;

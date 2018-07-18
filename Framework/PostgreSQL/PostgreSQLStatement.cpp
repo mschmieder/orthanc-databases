@@ -342,6 +342,19 @@ namespace OrthancDatabases
   }
 
 
+  PostgreSQLStatement::~PostgreSQLStatement()
+  {
+    try
+    {
+      Unprepare();
+    }
+    catch (Orthanc::OrthancException&)
+    {
+      // Ignore possible exceptions due to connection loss
+    }
+  }
+
+
   void PostgreSQLStatement::Run()
   {
     PGresult* result = reinterpret_cast<PGresult*>(Execute());

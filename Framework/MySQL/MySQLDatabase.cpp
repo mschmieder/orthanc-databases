@@ -81,6 +81,19 @@ namespace OrthancDatabases
   }
 
 
+  MySQLDatabase::~MySQLDatabase()
+  {
+    try
+    {
+      Close();
+    }
+    catch (Orthanc::OrthancException&)
+    {
+      // Ignore possible exceptions due to connection loss
+    }
+  }
+
+
   void MySQLDatabase::LogError()
   {
     if (mysql_ != NULL)
@@ -117,6 +130,13 @@ namespace OrthancDatabases
     {
       LOG(ERROR) << "Cannot initialize the MySQL connector";
       throw Orthanc::OrthancException(Orthanc::ErrorCode_InternalError);
+    }
+
+    if (parameters_.GetUnixSocket().empty())
+    {
+      // Fallback to TCP connection if no UNIX socket is provided
+      unsigned int protocol = MYSQL_PROTOCOL_TCP;
+      mysql_options(mysql_, MYSQL_OPT_PROTOCOL, (unsigned int *) &protocol);
     }
       
     const char* socket = (parameters_.GetUnixSocket().empty() ? NULL :
