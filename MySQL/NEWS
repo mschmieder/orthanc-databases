@@ -1,6 +1,10 @@
 Pending changes in the mainline
 ===============================
 
+
+Release 1.1 (2018-07-18)
+========================
+
 * Compatibility with MySQL 8.0
 * Improvement in the configuration of UNIX socket
 
