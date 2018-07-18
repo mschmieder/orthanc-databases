@@ -105,7 +105,7 @@ namespace OrthancDatabases
       if (!LookupGlobalIntegerProperty(version, *db, t, Orthanc::GlobalProperty_DatabaseSchemaVersion) ||
           version != 6)
       {
-        LOG(ERROR) << "PostgreSQL plugin is incompatible with database schema version: " << version;
+        LOG(ERROR) << "MySQL plugin is incompatible with database schema version: " << version;
         throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);        
       }
 
@@ -118,7 +118,7 @@ namespace OrthancDatabases
 
       if (revision != 1)
       {
-        LOG(ERROR) << "PostgreSQL plugin is incompatible with database schema revision: " << revision;
+        LOG(ERROR) << "MySQL plugin is incompatible with database schema revision: " << revision;
         throw Orthanc::OrthancException(Orthanc::ErrorCode_Database);        
       }
 
