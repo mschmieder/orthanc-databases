@@ -1,6 +1,8 @@
 Pending changes in the mainline
 ===============================
 
+* Fix: Catching exceptions in destructors
+
 
 Release 2.2 (2018-07-16)
 ========================
