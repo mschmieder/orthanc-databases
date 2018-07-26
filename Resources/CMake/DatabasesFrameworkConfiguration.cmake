@@ -48,6 +48,12 @@ endif()
 ## Configure the Orthanc Framework
 #####################################################################
 
+# Those modules of the Orthanc framework are not needed when dealing
+# with databases
+set(ENABLE_MODULE_IMAGES OFF)
+set(ENABLE_MODULE_JOBS OFF)
+set(ENABLE_MODULE_DICOM OFF)
+
 include(${ORTHANC_ROOT}/Resources/CMake/OrthancFrameworkConfiguration.cmake)
 include_directories(${ORTHANC_ROOT})
 
